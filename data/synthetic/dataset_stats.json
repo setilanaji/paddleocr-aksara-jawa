@@ -1,11 +1,11 @@
 {
-  "total_images": 300,
-  "corpus_lines": 99,
+  "total_images": 1000,
+  "corpus_lines": 303,
   "font": "NotoSansJavanese-Regular.ttf",
   "augmentation": {
-    "light": 117,
-    "medium": 125,
-    "heavy": 58
+    "light": 399,
+    "medium": 404,
+    "heavy": 197
   },
   "seed": 42,
   "task": "aksara_jawa_ocr",

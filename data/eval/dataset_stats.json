@@ -1,9 +1,9 @@
 {
-  "total_images": 100,
-  "corpus_lines": 99,
+  "total_images": 150,
+  "corpus_lines": 303,
   "font": "NotoSansJavanese-Regular.ttf",
   "augmentation": {
-    "light": 100,
+    "light": 150,
     "medium": 0,
     "heavy": 0
   },
