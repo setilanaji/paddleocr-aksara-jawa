@@ -2,6 +2,6 @@
 __pycache__/
 *.pyc
 .env
-data/real/
+data/
 .DS_Store
 uv.lock
