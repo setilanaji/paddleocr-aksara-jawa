@@ -1,0 +1,14 @@
+{
+  "total_images": 100,
+  "corpus_lines": 99,
+  "font": "NotoSansJavanese-Regular.ttf",
+  "augmentation": {
+    "light": 100,
+    "medium": 0,
+    "heavy": 0
+  },
+  "seed": 42,
+  "task": "aksara_jawa_ocr",
+  "language": "Javanese (Aksara Jawa)",
+  "unicode_block": "U+A980–U+A9DF"
+}

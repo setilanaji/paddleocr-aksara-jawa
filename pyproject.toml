@@ -1,0 +1,48 @@
+[project]
+name = "paddleocr-aksara-jawa"
+version = "0.1.0"
+description = "Aksara Jawa (Javanese Script) OCR fine-tuning with PaddleOCR-VL"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Yudha Setyaji", email = "setyajiyudha299@gmail.com" }]
+keywords = ["ocr", "aksara-jawa", "javanese", "paddleocr", "indonesian"]
+
+dependencies = [
+    "pillow>=12.0.0",
+    "opencv-python-headless>=4.8.0",
+    "numpy>=2.0.0",
+    "faker>=20.0.0",
+    "huggingface-hub>=1.0.0",
+    "jiwer>=3.0.0",
+    "rapidfuzz>=3.0.0",
+    "pandas>=2.0.0",
+    "tqdm>=4.65.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+paddle = [
+    "paddlepaddle>=3.2.1",
+    "paddleocr>=3.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.0.0",
+    "matplotlib>=3.7.0",
+]
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+name = "paddlepaddle"
+url = "https://www.paddlepaddle.org.cn/packages/stable/cpu/"
+explicit = true
+
+[tool.uv.sources]
+paddlepaddle = { index = "paddlepaddle" }
