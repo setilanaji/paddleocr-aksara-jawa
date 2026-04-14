@@ -1,0 +1,1209 @@
+{
+  "total_images": 150,
+  "mean_cer": 0.0,
+  "mean_wer": 0.0,
+  "exact_matches": 150,
+  "exact_rate": 1.0,
+  "per_image": [
+    {
+      "image": "aksara_0001.jpg",
+      "reference": "ꦏꦼꦧꦸꦤ꧀ꦲꦶꦏꦸꦩꦼꦂꦢꦸ",
+      "hypothesis": "ꦏꦼꦧꦸꦤ꧀ꦲꦶꦏꦸꦩꦼꦂꦢꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0002.jpg",
+      "reference": "ꦢꦫꦩꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "hypothesis": "ꦢꦫꦩꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0003.jpg",
+      "reference": "ꦲꦤꦁꦩꦤꦸꦁꦱꦲꦶꦏꦸꦱꦺꦴꦏ꧀",
+      "hypothesis": "ꦲꦤꦁꦩꦤꦸꦁꦱꦲꦶꦏꦸꦱꦺꦴꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0004.jpg",
+      "reference": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "hypothesis": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0005.jpg",
+      "reference": "ꦧꦱꦲꦶꦏꦸꦥꦼꦤ꧀ꦠꦶꦁ",
+      "hypothesis": "ꦧꦱꦲꦶꦏꦸꦥꦼꦤ꧀ꦠꦶꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0006.jpg",
+      "reference": "ꦢꦼꦱꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "hypothesis": "ꦢꦼꦱꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0007.jpg",
+      "reference": "ꦲꦶꦤ꧀ꦢꦸꦱ꧀ꦠꦿꦶꦲꦶꦏꦸꦠꦸꦩꦸꦩꦸ",
+      "hypothesis": "ꦲꦶꦤ꧀ꦢꦸꦱ꧀ꦠꦿꦶꦲꦶꦏꦸꦠꦸꦩꦸꦩꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0008.jpg",
+      "reference": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0009.jpg",
+      "reference": "ꦒꦸꦤꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦒꦸꦤꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0010.jpg",
+      "reference": "ꦢꦺꦴꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦢꦺꦴꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0011.jpg",
+      "reference": "ꦲꦶꦁꦔꦂꦗꦩꦤ꧀ꦱꦶꦥꦠꦒꦒꦃ",
+      "hypothesis": "ꦲꦶꦁꦔꦂꦗꦩꦤ꧀ꦱꦶꦥꦠꦒꦒꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0012.jpg",
+      "reference": "ꦏꦸꦮꦸꦁꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "hypothesis": "ꦏꦸꦮꦸꦁꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0013.jpg",
+      "reference": "ꦩꦤꦸꦁꦱꦠꦸꦗꦸꦂꦒꦼꦒꦼꦂ",
+      "hypothesis": "ꦩꦤꦸꦁꦱꦠꦸꦗꦸꦂꦒꦼꦒꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0014.jpg",
+      "reference": "ꦥꦿꦶꦪꦪꦶꦲꦶꦏꦸꦲꦏꦸ",
+      "hypothesis": "ꦥꦿꦶꦪꦪꦶꦲꦶꦏꦸꦲꦏꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0015.jpg",
+      "reference": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "hypothesis": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0016.jpg",
+      "reference": "ꦤꦼꦒꦫꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "hypothesis": "ꦤꦼꦒꦫꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0017.jpg",
+      "reference": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0018.jpg",
+      "reference": "ꦫꦱꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "hypothesis": "ꦫꦱꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0019.jpg",
+      "reference": "ꦒꦼꦭꦶꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦒꦼꦭꦶꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0020.jpg",
+      "reference": "ꦪꦼꦤ꧀ꦢꦿꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "hypothesis": "ꦪꦼꦤ꧀ꦢꦿꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0021.jpg",
+      "reference": "ꦏꦸꦥꦶꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦏꦸꦥꦶꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0022.jpg",
+      "reference": "ꦠꦸꦭꦶꦱꦤ꧀ꦲꦶꦏꦸꦲꦶꦁꦒꦶꦃꦲꦤ꧀",
+      "hypothesis": "ꦠꦸꦭꦶꦱꦤ꧀ꦲꦶꦏꦸꦲꦶꦁꦒꦶꦃꦲꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0023.jpg",
+      "reference": "ꦒꦸꦩꦼꦒꦼꦭꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "hypothesis": "ꦒꦸꦩꦼꦒꦼꦭꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0024.jpg",
+      "reference": "ꦥꦼꦠꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦥꦼꦠꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0025.jpg",
+      "reference": "ꦥꦼꦂꦠꦤꦶꦪꦤ꧀ꦲꦶꦏꦸꦫꦢꦼꦤ꧀",
+      "hypothesis": "ꦥꦼꦂꦠꦤꦶꦪꦤ꧀ꦲꦶꦏꦸꦫꦢꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0026.jpg",
+      "reference": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "hypothesis": "ꦱꦭꦩꦼꦠ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0027.jpg",
+      "reference": "ꦭꦤ꧀ꦢꦼꦥ꧀ꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "hypothesis": "ꦭꦤ꧀ꦢꦼꦥ꧀ꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0028.jpg",
+      "reference": "ꦥꦸꦠꦼꦂꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "hypothesis": "ꦥꦸꦠꦼꦂꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0029.jpg",
+      "reference": "ꦥꦤ꧀ꦠꦶꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "hypothesis": "ꦥꦤ꧀ꦠꦶꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0030.jpg",
+      "reference": "ꦩꦸꦏ꧀ꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦩꦸꦏ꧀ꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0031.jpg",
+      "reference": "ꦱꦸꦤꦺꦴꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦱꦸꦤꦺꦴꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0032.jpg",
+      "reference": "ꦏꦼꦫ꧀ꦠꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "hypothesis": "ꦏꦼꦫ꧀ꦠꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0033.jpg",
+      "reference": "ꦩꦶꦪꦺꦴꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦩꦶꦪꦺꦴꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0034.jpg",
+      "reference": "ꦥꦫꦤ꧀ꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "hypothesis": "ꦥꦫꦤ꧀ꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0035.jpg",
+      "reference": "ꦲꦶꦗꦺꦴꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦲꦶꦗꦺꦴꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0036.jpg",
+      "reference": "ꦒꦩ꧀ꦧꦸꦃꦲꦶꦏꦸꦒꦔꦱꦂ",
+      "hypothesis": "ꦒꦩ꧀ꦧꦸꦃꦲꦶꦏꦸꦒꦔꦱꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0037.jpg",
+      "reference": "ꦲꦤꦁꦢꦶꦢꦺꦴꦤ꧀ꦲꦶꦏꦸꦮꦸꦤ꧀ꦢꦸ",
+      "hypothesis": "ꦲꦤꦁꦢꦶꦢꦺꦴꦤ꧀ꦲꦶꦏꦸꦮꦸꦤ꧀ꦢꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0038.jpg",
+      "reference": "ꦥꦸꦠꦸꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦥꦸꦠꦸꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0039.jpg",
+      "reference": "ꦒꦸꦫꦸꦲꦶꦏꦸꦥꦶꦤ꧀ꦠꦼꦂ",
+      "hypothesis": "ꦒꦸꦫꦸꦲꦶꦏꦸꦥꦶꦤ꧀ꦠꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0040.jpg",
+      "reference": "ꦢꦶꦤꦶꦁꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦢꦶꦤꦶꦁꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0041.jpg",
+      "reference": "ꦏꦺꦴꦥꦶꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "hypothesis": "ꦏꦺꦴꦥꦶꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0042.jpg",
+      "reference": "ꦩꦺꦴꦤ꧀ꦠꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦩꦺꦴꦤ꧀ꦠꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0043.jpg",
+      "reference": "ꦥꦸꦠꦸꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦥꦸꦠꦸꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0044.jpg",
+      "reference": "ꦥꦼꦒꦸꦤꦸꦁꦒꦸꦤꦤ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦥꦼꦒꦸꦤꦸꦁꦒꦸꦤꦤ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0045.jpg",
+      "reference": "ꦩꦠꦲꦫꦶꦲꦶꦏꦸꦠꦼꦒꦼꦱ꧀",
+      "hypothesis": "ꦩꦠꦲꦫꦶꦲꦶꦏꦸꦠꦼꦒꦼꦱ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0046.jpg",
+      "reference": "ꦏꦼꦭꦸꦫꦲꦶꦏꦸꦫꦢꦼꦤ꧀",
+      "hypothesis": "ꦏꦼꦭꦸꦫꦲꦶꦏꦸꦫꦢꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0047.jpg",
+      "reference": "ꦲꦶꦁꦏꦁꦏꦸꦁꦲꦶꦏꦸꦗꦮꦶ",
+      "hypothesis": "ꦲꦶꦁꦏꦁꦏꦸꦁꦲꦶꦏꦸꦗꦮꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0048.jpg",
+      "reference": "ꦱꦶꦥꦠꦏꦸꦱꦺꦴꦩ꧀ꦲꦃꦢꦶꦩꦼꦂꦒꦶ",
+      "hypothesis": "ꦱꦶꦥꦠꦏꦸꦱꦺꦴꦩ꧀ꦲꦃꦢꦶꦩꦼꦂꦒꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0049.jpg",
+      "reference": "ꦒꦸꦩꦼꦒꦼꦭꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "hypothesis": "ꦒꦸꦩꦼꦒꦼꦭꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0050.jpg",
+      "reference": "ꦩꦼꦤ꧀ꦝꦸꦁꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦩꦼꦤ꧀ꦝꦸꦁꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0051.jpg",
+      "reference": "ꦱꦶꦤꦺꦴꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦱꦶꦤꦺꦴꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0052.jpg",
+      "reference": "ꦭꦼꦩ꧀ꦧꦃꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "hypothesis": "ꦭꦼꦩ꧀ꦧꦃꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0053.jpg",
+      "reference": "ꦥꦼꦗꦃꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦥꦼꦗꦃꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0054.jpg",
+      "reference": "ꦩꦼꦱ꧀ꦗꦶꦢ꧀ꦲꦶꦏꦸꦮꦶꦤ꧀ꦢꦃ",
+      "hypothesis": "ꦩꦼꦱ꧀ꦗꦶꦢ꧀ꦲꦶꦏꦸꦮꦶꦤ꧀ꦢꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0055.jpg",
+      "reference": "ꦩꦤꦸꦁꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦩꦤꦸꦁꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0056.jpg",
+      "reference": "ꦥꦸꦏꦸꦭ꧀ꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "hypothesis": "ꦥꦸꦏꦸꦭ꧀ꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0057.jpg",
+      "reference": "ꦲꦶꦁꦒꦶꦃꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "hypothesis": "ꦲꦶꦁꦒꦶꦃꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0058.jpg",
+      "reference": "ꦩꦶꦱ꧀ꦱꦺꦴꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦩꦶꦱ꧀ꦱꦺꦴꦁꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0059.jpg",
+      "reference": "ꦥꦼꦒꦸꦤꦸꦁꦒꦸꦤꦤ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "hypothesis": "ꦥꦼꦒꦸꦤꦸꦁꦒꦸꦤꦤ꧀ꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0060.jpg",
+      "reference": "ꦩꦤꦸꦁꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦩꦤꦸꦁꦱꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0061.jpg",
+      "reference": "ꦥꦶꦁꦒꦶꦠ꧀ꦲꦶꦏꦸꦩꦼꦩꦱꦸꦃ",
+      "hypothesis": "ꦥꦶꦁꦒꦶꦠ꧀ꦲꦶꦏꦸꦩꦼꦩꦱꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0062.jpg",
+      "reference": "ꦱꦩꦸꦢꦿꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦱꦩꦸꦢꦿꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0063.jpg",
+      "reference": "ꦱꦸꦮꦂꦒꦩꦸꦒꦶꦤꦶꦁꦲꦸꦫꦶꦥ꧀",
+      "hypothesis": "ꦱꦸꦮꦂꦒꦩꦸꦒꦶꦤꦶꦁꦲꦸꦫꦶꦥ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0064.jpg",
+      "reference": "ꦩꦠꦲꦫꦶꦲꦶꦏꦸꦠꦼꦒꦼꦱ꧀",
+      "hypothesis": "ꦩꦠꦲꦫꦶꦲꦶꦏꦸꦠꦼꦒꦼꦱ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0065.jpg",
+      "reference": "ꦩꦶꦭꦾꦲꦶꦏꦸꦠꦼꦫꦸꦱ꧀",
+      "hypothesis": "ꦩꦶꦭꦾꦲꦶꦏꦸꦠꦼꦫꦸꦱ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0066.jpg",
+      "reference": "ꦭꦶꦩꦸꦁꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦭꦶꦩꦸꦁꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0067.jpg",
+      "reference": "ꦏꦲꦶꦭꦤꦃꦏꦸꦔꦗꦺꦴꦒꦾꦏꦂꦠ",
+      "hypothesis": "ꦏꦲꦶꦭꦤꦃꦏꦸꦔꦗꦺꦴꦒꦾꦏꦂꦠ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0068.jpg",
+      "reference": "ꦮꦸꦭꦤ꧀ꦗꦮꦲꦶꦏꦸꦢꦺꦴꦤ꧀ꦪꦺꦴꦤꦺ",
+      "hypothesis": "ꦮꦸꦭꦤ꧀ꦗꦮꦲꦶꦏꦸꦢꦺꦴꦤ꧀ꦪꦺꦴꦤꦺ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0069.jpg",
+      "reference": "ꦏꦭꦁꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "hypothesis": "ꦏꦭꦁꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0070.jpg",
+      "reference": "ꦏꦼꦫꦠꦺꦴꦤ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦏꦼꦫꦠꦺꦴꦤ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0071.jpg",
+      "reference": "ꦏꦿꦠꦺꦴꦤ꧀ꦔꦪꦺꦴꦒꦾꦏꦂꦠꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔꦏꦸ",
+      "hypothesis": "ꦏꦿꦠꦺꦴꦤ꧀ꦔꦪꦺꦴꦒꦾꦏꦂꦠꦲꦶꦏꦸꦠꦼꦠꦺꦴꦔꦏꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0072.jpg",
+      "reference": "ꦲꦤꦁꦩꦤꦸꦁꦱꦲꦶꦏꦸꦱꦺꦴꦏ꧀",
+      "hypothesis": "ꦲꦤꦁꦩꦤꦸꦁꦱꦲꦶꦏꦸꦱꦺꦴꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0073.jpg",
+      "reference": "ꦠꦸꦮꦸꦃꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "hypothesis": "ꦠꦸꦮꦸꦃꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0074.jpg",
+      "reference": "ꦢꦺꦤꦺꦴꦔꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦢꦺꦤꦺꦴꦔꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0075.jpg",
+      "reference": "ꦮꦼꦁꦒꦶꦃꦲꦶꦏꦸꦩꦼꦂꦢꦸ",
+      "hypothesis": "ꦮꦼꦁꦒꦶꦃꦲꦶꦏꦸꦩꦼꦂꦢꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0076.jpg",
+      "reference": "ꦮꦪꦁꦏꦸꦭꦶꦠ꧀ꦢꦢꦺꦴꦱ꧀ꦲꦤꦁꦗꦮ",
+      "hypothesis": "ꦮꦪꦁꦏꦸꦭꦶꦠ꧀ꦢꦢꦺꦴꦱ꧀ꦲꦤꦁꦗꦮ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0077.jpg",
+      "reference": "ꦒꦤ꧀ꦝꦸꦭ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦒꦤ꧀ꦝꦸꦭ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0078.jpg",
+      "reference": "ꦲꦏꦸꦧꦸꦠꦸꦃꦧꦤ꧀ꦠꦸꦲꦤ꧀",
+      "hypothesis": "ꦲꦏꦸꦧꦸꦠꦸꦃꦧꦤ꧀ꦠꦸꦲꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0079.jpg",
+      "reference": "ꦲꦺꦴꦫꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦲꦺꦴꦫꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0080.jpg",
+      "reference": "ꦗꦩꦤ꧀ꦲꦤꦶꦫꦔꦲꦶꦏꦸꦮꦸꦭꦸ",
+      "hypothesis": "ꦗꦩꦤ꧀ꦲꦤꦶꦫꦔꦲꦶꦏꦸꦮꦸꦭꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0081.jpg",
+      "reference": "ꦠꦸꦭꦶꦱꦤ꧀ꦲꦶꦏꦸꦲꦶꦁꦒꦶꦃꦲꦤ꧀",
+      "hypothesis": "ꦠꦸꦭꦶꦱꦤ꧀ꦲꦶꦏꦸꦲꦶꦁꦒꦶꦃꦲꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0082.jpg",
+      "reference": "ꦱꦺꦴꦏ꧀ꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦱꦺꦴꦏ꧀ꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0083.jpg",
+      "reference": "ꦧꦠꦶꦏ꧀ꦗꦮꦲꦶꦏꦸꦒꦩ꧀ꦧꦂꦏꦤꦼꦤ꧀ꦢꦃꦲꦤ꧀",
+      "hypothesis": "ꦧꦠꦶꦏ꧀ꦗꦮꦲꦶꦏꦸꦒꦩ꧀ꦧꦂꦏꦤꦼꦤ꧀ꦢꦃꦲꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0084.jpg",
+      "reference": "ꦲꦏꦸꦩꦤꦸꦁꦱꦏꦶꦁꦧꦸꦩꦶ",
+      "hypothesis": "ꦲꦏꦸꦩꦤꦸꦁꦱꦏꦶꦁꦧꦸꦩꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0085.jpg",
+      "reference": "ꦤꦸꦭꦶꦱ꧀ꦲꦶꦏꦸꦩꦼꦤ꧀ꦠꦼꦫꦶ",
+      "hypothesis": "ꦤꦸꦭꦶꦱ꧀ꦲꦶꦏꦸꦩꦼꦤ꧀ꦠꦼꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0086.jpg",
+      "reference": "ꦩꦫ꧀ꦒꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦩꦫ꧀ꦒꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0087.jpg",
+      "reference": "ꦠꦼꦒꦼꦱ꧀ꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "hypothesis": "ꦠꦼꦒꦼꦱ꧀ꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0088.jpg",
+      "reference": "ꦏꦸꦮꦶꦏꦸꦤꦺꦴꦩꦺꦴꦂꦱꦏꦶꦁꦗꦮ",
+      "hypothesis": "ꦏꦸꦮꦶꦏꦸꦤꦺꦴꦩꦺꦴꦂꦱꦏꦶꦁꦗꦮ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0089.jpg",
+      "reference": "ꦒꦸꦩꦼꦫꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦒꦸꦩꦼꦫꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0090.jpg",
+      "reference": "ꦤꦺꦴꦧꦺꦴꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "hypothesis": "ꦤꦺꦴꦧꦺꦴꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0091.jpg",
+      "reference": "ꦥꦿꦗꦸꦫꦶꦠ꧀ꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦥꦿꦗꦸꦫꦶꦠ꧀ꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0092.jpg",
+      "reference": "ꦧꦶꦪꦢꦶꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦧꦶꦪꦢꦶꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0093.jpg",
+      "reference": "ꦱꦸꦏꦩꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "hypothesis": "ꦱꦸꦏꦩꦲꦶꦏꦸꦏꦼꦱꦸꦧꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0094.jpg",
+      "reference": "ꦠꦸꦭꦸꦱ꧀ꦲꦶꦏꦸꦥꦿꦶꦧꦢꦶ",
+      "hypothesis": "ꦠꦸꦭꦸꦱ꧀ꦲꦶꦏꦸꦥꦿꦶꦧꦢꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0095.jpg",
+      "reference": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦢꦏ꧀ꦱꦶꦤꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0096.jpg",
+      "reference": "ꦏꦸꦮꦸꦁꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "hypothesis": "ꦏꦸꦮꦸꦁꦲꦶꦏꦸꦒꦺꦴꦠꦺꦴꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0097.jpg",
+      "reference": "ꦤꦼꦒꦫꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "hypothesis": "ꦤꦼꦒꦫꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0098.jpg",
+      "reference": "ꦥꦸꦫꦶꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦥꦸꦫꦶꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0099.jpg",
+      "reference": "ꦗꦩꦤ꧀ꦒꦼꦩꦶꦭꦁꦲꦶꦏꦸꦱꦼꦭꦩꦼꦠ꧀",
+      "hypothesis": "ꦗꦩꦤ꧀ꦒꦼꦩꦶꦭꦁꦲꦶꦏꦸꦱꦼꦭꦩꦼꦠ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0100.jpg",
+      "reference": "ꦗꦮꦲꦶꦏꦸꦩꦸꦭꦾꦥꦸꦭꦸ",
+      "hypothesis": "ꦗꦮꦲꦶꦏꦸꦩꦸꦭꦾꦥꦸꦭꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0101.jpg",
+      "reference": "ꦏꦤ꧀ꦠꦶꦭꦲꦶꦏꦸꦩꦼꦤꦁ",
+      "hypothesis": "ꦏꦤ꧀ꦠꦶꦭꦲꦶꦏꦸꦩꦼꦤꦁ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0102.jpg",
+      "reference": "ꦥꦼꦱꦺꦴꦤ꧀ꦠꦿꦺꦤ꧀ꦗꦮꦲꦶꦏꦸꦩꦸꦮ",
+      "hypothesis": "ꦥꦼꦱꦺꦴꦤ꧀ꦠꦿꦺꦤ꧀ꦗꦮꦲꦶꦏꦸꦩꦸꦮ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0103.jpg",
+      "reference": "ꦭꦶꦩꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "hypothesis": "ꦭꦶꦩꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0104.jpg",
+      "reference": "ꦲꦸꦠꦤꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "hypothesis": "ꦲꦸꦠꦤꦲꦶꦏꦸꦭꦸꦲꦸꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0105.jpg",
+      "reference": "ꦱꦸꦩꦼꦢꦾꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦱꦸꦩꦼꦢꦾꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0106.jpg",
+      "reference": "ꦢꦺꦤꦺꦴꦔꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦢꦺꦤꦺꦴꦔꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0107.jpg",
+      "reference": "ꦭꦶꦪꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "hypothesis": "ꦭꦶꦪꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0108.jpg",
+      "reference": "ꦗꦩꦤ꧀ꦒꦼꦩꦶꦭꦁꦲꦶꦏꦸꦱꦼꦭꦩꦼꦠ꧀",
+      "hypothesis": "ꦗꦩꦤ꧀ꦒꦼꦩꦶꦭꦁꦲꦶꦏꦸꦱꦼꦭꦩꦼꦠ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0109.jpg",
+      "reference": "ꦲꦶꦁꦔꦂꦗꦩꦤ꧀ꦱꦶꦥꦠꦒꦒꦃ",
+      "hypothesis": "ꦲꦶꦁꦔꦂꦗꦩꦤ꧀ꦱꦶꦥꦠꦒꦒꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0110.jpg",
+      "reference": "ꦲꦼꦩ꧀ꦧꦱ꧀ꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "hypothesis": "ꦲꦼꦩ꧀ꦧꦱ꧀ꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0111.jpg",
+      "reference": "ꦠꦸꦩꦸꦩꦸꦲꦶꦏꦸꦒꦔꦱꦂ",
+      "hypothesis": "ꦠꦸꦩꦸꦩꦸꦲꦶꦏꦸꦒꦔꦱꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0112.jpg",
+      "reference": "ꦏꦼꦩ꧀ꦧꦁꦲꦶꦏꦸꦥꦿꦶꦪꦪꦶ",
+      "hypothesis": "ꦏꦼꦩ꧀ꦧꦁꦲꦶꦏꦸꦥꦿꦶꦪꦪꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0113.jpg",
+      "reference": "ꦱꦸꦩꦼꦢꦾꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "hypothesis": "ꦱꦸꦩꦼꦢꦾꦲꦶꦏꦸꦧꦼꦤꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0114.jpg",
+      "reference": "ꦏꦼꦢꦪꦤꦤ꧀ꦏꦸꦭꦶꦤꦼꦔꦱꦸꦩ꧀ꦧꦼꦂ",
+      "hypothesis": "ꦏꦼꦢꦪꦤꦤ꧀ꦏꦸꦭꦶꦤꦼꦔꦱꦸꦩ꧀ꦧꦼꦂ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0115.jpg",
+      "reference": "ꦧꦼꦭꦃꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦧꦼꦭꦃꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0116.jpg",
+      "reference": "ꦭꦺꦴꦫꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "hypothesis": "ꦭꦺꦴꦫꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0117.jpg",
+      "reference": "ꦠꦿꦢꦶꦱꦶꦲꦤꦁꦗꦮꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "hypothesis": "ꦠꦿꦢꦶꦱꦶꦲꦤꦁꦗꦮꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0118.jpg",
+      "reference": "ꦠꦼꦏ꧀ꦤꦺꦴꦭꦺꦴꦒꦶꦲꦶꦏꦸꦩꦼꦔꦼꦤꦏ꧀ꦏꦶ",
+      "hypothesis": "ꦠꦼꦏ꧀ꦤꦺꦴꦭꦺꦴꦒꦶꦲꦶꦏꦸꦩꦼꦔꦼꦤꦏ꧀ꦏꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0119.jpg",
+      "reference": "ꦮꦼꦢꦶꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦮꦼꦢꦶꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0120.jpg",
+      "reference": "ꦲꦶꦃꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "hypothesis": "ꦲꦶꦃꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0121.jpg",
+      "reference": "ꦭꦶꦩꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "hypothesis": "ꦭꦶꦩꦺꦴꦲꦶꦏꦸꦧꦭꦶꦏ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0122.jpg",
+      "reference": "ꦏꦼꦫꦠꦺꦴꦤ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦏꦼꦫꦠꦺꦴꦤ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0123.jpg",
+      "reference": "ꦱꦶꦁꦒꦶꦃꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦱꦶꦁꦒꦶꦃꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0124.jpg",
+      "reference": "ꦮꦼꦢꦶꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦮꦼꦢꦶꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0125.jpg",
+      "reference": "ꦤꦼꦒꦫꦶꦠꦸꦱ꧀ꦩꦶꦂꦱꦶꦗꦂꦮꦶ",
+      "hypothesis": "ꦤꦼꦒꦫꦶꦠꦸꦱ꧀ꦩꦶꦂꦱꦶꦗꦂꦮꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0126.jpg",
+      "reference": "ꦭꦩ꧀ꦧꦼꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "hypothesis": "ꦭꦩ꧀ꦧꦼꦲꦶꦏꦸꦩꦸꦩꦸꦮꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0127.jpg",
+      "reference": "ꦩꦶꦁꦒꦸꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀ꦠꦼꦒꦸꦃ",
+      "hypothesis": "ꦩꦶꦁꦒꦸꦲꦶꦏꦸꦠꦼꦠꦺꦴꦥ꧀ꦠꦼꦒꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0128.jpg",
+      "reference": "ꦒꦼꦢꦸꦁꦲꦶꦏꦸꦠꦸꦩꦸꦩꦸ",
+      "hypothesis": "ꦒꦼꦢꦸꦁꦲꦶꦏꦸꦠꦸꦩꦸꦩꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0129.jpg",
+      "reference": "ꦥꦼꦠꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦥꦼꦠꦸꦁꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0130.jpg",
+      "reference": "ꦱꦺꦤꦺꦴꦔꦏꦸꦏꦭꦮꦤ꧀ꦢꦤ꧀ꦠꦼꦤ꧀ꦢꦼꦩ꧀",
+      "hypothesis": "ꦱꦺꦤꦺꦴꦔꦏꦸꦏꦭꦮꦤ꧀ꦢꦤ꧀ꦠꦼꦤ꧀ꦢꦼꦩ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0131.jpg",
+      "reference": "ꦩꦶꦪꦺꦴꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦩꦶꦪꦺꦴꦱ꧀ꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0132.jpg",
+      "reference": "ꦧꦶꦪꦢꦶꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦧꦶꦪꦢꦶꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0133.jpg",
+      "reference": "ꦩꦿꦶꦃꦲꦶꦏꦸꦲꦁꦒꦺꦴꦒꦺꦴ",
+      "hypothesis": "ꦩꦿꦶꦃꦲꦶꦏꦸꦲꦁꦒꦺꦴꦒꦺꦴ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0134.jpg",
+      "reference": "ꦏꦸꦠꦸꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "hypothesis": "ꦏꦸꦠꦸꦲꦶꦏꦸꦒꦸꦩꦼꦒꦼꦭ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0135.jpg",
+      "reference": "ꦒꦼꦤ꧀ꦝꦶꦁꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦒꦼꦤ꧀ꦝꦶꦁꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0136.jpg",
+      "reference": "ꦔꦺꦴꦒꦺꦴꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "hypothesis": "ꦔꦺꦴꦒꦺꦴꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0137.jpg",
+      "reference": "ꦥꦮꦺꦴꦤ꧀ꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "hypothesis": "ꦥꦮꦺꦴꦤ꧀ꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0138.jpg",
+      "reference": "ꦠꦸꦭꦸꦱ꧀ꦲꦶꦏꦸꦥꦿꦶꦧꦢꦶ",
+      "hypothesis": "ꦠꦸꦭꦸꦱ꧀ꦲꦶꦏꦸꦥꦿꦶꦧꦢꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0139.jpg",
+      "reference": "ꦥꦼꦤ꧀ꦝꦶꦢꦶꦏꦤ꧀ꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "hypothesis": "ꦥꦼꦤ꧀ꦝꦶꦢꦶꦏꦤ꧀ꦲꦶꦏꦸꦒꦼꦣꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0140.jpg",
+      "reference": "ꦢꦸꦤꦾꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "hypothesis": "ꦢꦸꦤꦾꦲꦶꦏꦸꦭꦼꦤ꧀ꦠꦼꦫ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0141.jpg",
+      "reference": "ꦤꦶꦭꦲꦶꦏꦸꦱꦺꦴꦁꦏꦺꦴ",
+      "hypothesis": "ꦤꦶꦭꦲꦶꦏꦸꦱꦺꦴꦁꦏꦺꦴ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0142.jpg",
+      "reference": "ꦠꦼꦩꦼꦤ꧀ꦲꦶꦏꦸꦩꦸꦭꦾ",
+      "hypothesis": "ꦠꦼꦩꦼꦤ꧀ꦲꦶꦏꦸꦩꦸꦭꦾ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0143.jpg",
+      "reference": "ꦩꦺꦴꦤ꧀ꦠꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "hypothesis": "ꦩꦺꦴꦤ꧀ꦠꦲꦶꦏꦸꦲꦸꦤ꧀ꦠꦸ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0144.jpg",
+      "reference": "ꦥꦼꦱꦺꦴꦤ꧀ꦠꦿꦺꦤ꧀ꦗꦮꦲꦶꦏꦸꦩꦸꦮ",
+      "hypothesis": "ꦥꦼꦱꦺꦴꦤ꧀ꦠꦿꦺꦤ꧀ꦗꦮꦲꦶꦏꦸꦩꦸꦮ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0145.jpg",
+      "reference": "ꦏꦺꦴꦥꦶꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "hypothesis": "ꦏꦺꦴꦥꦶꦲꦶꦏꦸꦭꦼꦱ꧀ꦠꦫꦶ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0146.jpg",
+      "reference": "ꦭꦺꦤ꧀ꦠꦼꦫꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "hypothesis": "ꦭꦺꦤ꧀ꦠꦼꦫꦲꦶꦏꦸꦠꦼꦒꦸꦃ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0147.jpg",
+      "reference": "ꦒꦺꦴꦒꦺꦴꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "hypothesis": "ꦒꦺꦴꦒꦺꦴꦲꦶꦏꦸꦱꦤꦺꦴꦱꦼ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0148.jpg",
+      "reference": "ꦮꦸꦭꦤ꧀ꦗꦮꦲꦶꦏꦸꦢꦺꦴꦤ꧀ꦪꦺꦴꦤꦺ",
+      "hypothesis": "ꦮꦸꦭꦤ꧀ꦗꦮꦲꦶꦏꦸꦢꦺꦴꦤ꧀ꦪꦺꦴꦤꦺ",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0149.jpg",
+      "reference": "ꦱꦼꦏꦺꦴꦭꦃꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "hypothesis": "ꦱꦼꦏꦺꦴꦭꦃꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    },
+    {
+      "image": "aksara_0150.jpg",
+      "reference": "ꦱꦼꦏꦺꦴꦭꦃꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "hypothesis": "ꦱꦼꦏꦺꦴꦭꦃꦲꦶꦏꦸꦩꦼꦁꦒꦼꦤ꧀",
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": true
+    }
+  ]
+}

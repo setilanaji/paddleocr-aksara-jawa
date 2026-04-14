@@ -9,6 +9,7 @@ Supports two modes:
 Usage:
     uv run python scripts/generate_aksara.py --count 1000 --output data/synthetic/
     uv run python scripts/generate_aksara.py --count 150  --output data/eval/ --eval
+    uv run python scripts/generate_aksara.py --count 1000 --output data/synthetic/ --erniekit --image_dir ./data/synthetic
     uv run python scripts/generate_aksara.py --count 500  --output data/synthetic/ --mode multiline
     uv run python scripts/generate_aksara.py --count 1000 --output data/synthetic/ --mode mixed
 """
@@ -139,28 +140,24 @@ def render_multiline(
     font  = load_font(font_size)
     anns  = []
 
-    # Measure line height from a reference character
     ref_bbox  = draw.textbbox((0, 0), "ꦲ", font=font)
     line_h    = ref_bbox[3] - ref_bbox[1]
     line_step = int(line_h * line_spacing_factor)
 
-    # Starting position with random left margin
     margin_x = random.randint(16, 48)
     margin_y = random.randint(12, 32)
     y = margin_y
 
     for line_text in lines:
         if y + line_h > img_h - 10:
-            break  # Don't overflow image
+            break
 
         bbox = draw.textbbox((0, 0), line_text, font=font)
         tw   = bbox[2] - bbox[0]
         th   = bbox[3] - bbox[1]
 
-        # Clip text to image width with right margin
         max_w = img_w - margin_x - 16
         if font.getlength(line_text) > max_w:
-            # Trim to fit
             while font.getlength(line_text) > max_w and len(line_text) > 2:
                 line_text = line_text[:-1]
             bbox = draw.textbbox((0, 0), line_text, font=font)
@@ -191,24 +188,20 @@ def render_multiline(
 def augment(img: Image.Image, severity: str = "medium") -> Image.Image:
     rng = random.random
 
-    # Rotation
     max_angle = {"light": 2, "medium": 5, "heavy": 10}.get(severity, 5)
     angle = random.uniform(-max_angle, max_angle)
     if abs(angle) > 0.3:
         bg = img.getpixel((2, 2))
         img = img.rotate(angle, expand=False, fillcolor=bg)
 
-    # Gaussian blur
     blur_p = {"light": 0.2, "medium": 0.4, "heavy": 0.65}.get(severity, 0.4)
     if rng() < blur_p:
         radius = random.uniform(0.3, {"light": 0.8, "medium": 1.5, "heavy": 2.5}[severity])
         img = img.filter(ImageFilter.GaussianBlur(radius=radius))
 
-    # Brightness / contrast
     img = ImageEnhance.Brightness(img).enhance(random.uniform(0.70, 1.30))
     img = ImageEnhance.Contrast(img).enhance(random.uniform(0.80, 1.25))
 
-    # Noise
     noise_p = {"light": 0.15, "medium": 0.45, "heavy": 0.75}.get(severity, 0.45)
     if rng() < noise_p:
         arr   = np.array(img).astype(np.int16)
@@ -216,7 +209,6 @@ def augment(img: Image.Image, severity: str = "medium") -> Image.Image:
         noise = np.random.randint(-level, level, arr.shape, dtype=np.int16)
         img   = Image.fromarray(np.clip(arr + noise, 0, 255).astype(np.uint8))
 
-    # JPEG compression
     if rng() < 0.5:
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=random.randint(60, 95))
@@ -233,10 +225,7 @@ def to_label_txt(img_name: str, annotations: list[dict]) -> str:
 
 
 def to_ground_truth(img_name: str, annotations: list[dict]) -> str:
-    """
-    Single-line: assistant replies with the transcription directly.
-    Multi-line:  assistant replies with newline-separated transcriptions.
-    """
+    """Conversation format for reference and evaluation."""
     full_text = "\n".join(a["transcription"] for a in annotations)
     return json.dumps({
         "image": img_name,
@@ -253,6 +242,25 @@ def to_ground_truth(img_name: str, annotations: list[dict]) -> str:
     }, ensure_ascii=False)
 
 
+def to_erniekit(img_name: str, annotations: list[dict], image_dir: str = "./data/synthetic") -> str:
+    """ERNIEKit SFT format required for erniekit train command."""
+    full_text = "\n".join(a["transcription"] for a in annotations)
+    # Normalise path separator
+    img_dir = image_dir.rstrip("/").rstrip("\\")
+    return json.dumps({
+        "image_info": [
+            {
+                "matched_text_index": 0,
+                "image_url": f"{img_dir}/{img_name}",
+            }
+        ],
+        "text_info": [
+            {"text": "OCR:", "tag": "mask"},
+            {"text": full_text, "tag": "no_mask"},
+        ],
+    }, ensure_ascii=False)
+
+
 # ── Main generation loop ──────────────────────────────────────────────────────
 
 def generate(
@@ -260,7 +268,9 @@ def generate(
     output_dir:   str,
     seed:         int  = None,
     augmentation: str  = "mixed",
-    mode:         str  = "mixed",   # "single" | "multiline" | "mixed"
+    mode:         str  = "mixed",
+    erniekit:     bool = False,
+    image_dir:    str  = None,
     preview:      bool = False,
 ):
     if seed is not None:
@@ -288,7 +298,7 @@ def generate(
     else:
         modes = [mode] * count
 
-    labels, gts = [], []
+    labels, gts, erniekit_records = [], [], []
     single_count, multi_count = 0, 0
     print(f"\nGenerating {count} images → {out.resolve()}\n")
 
@@ -316,7 +326,6 @@ def generate(
             multi_count += 1
 
         if not anns:
-            # Fallback: empty image still gets a placeholder
             anns = [{"transcription": "", "points": [[0,0],[1,0],[1,1],[0,1]],
                      "label": "aksara_jawa", "illegibility": True}]
 
@@ -325,6 +334,10 @@ def generate(
 
         labels.append(to_label_txt(name, anns))
         gts.append(to_ground_truth(name, anns))
+
+        if erniekit:
+            img_dir = image_dir or str(out)
+            erniekit_records.append(to_erniekit(name, anns, img_dir))
 
         if (i + 1) % 100 == 0 or i == 0:
             print(f"  [{i+1:>4}/{count}]  {name}  ({img_mode}, {sev})")
@@ -341,10 +354,16 @@ def generate(
         "augmentation":   {s: sevs.count(s) for s in ("light", "medium", "heavy")},
         "mode":           mode,
         "seed":           seed,
+        "erniekit":       erniekit,
         "task":           "aksara_jawa_ocr",
         "language":       "Javanese (Aksara Jawa)",
         "unicode_block":  "U+A980–U+A9DF",
     }, indent=2, ensure_ascii=False))
+
+    if erniekit:
+        (out / "ocr_vl_sft.jsonl").write_text(
+            "\n".join(erniekit_records), encoding="utf-8")
+        print(f"  ocr_vl_sft.jsonl   → {out / 'ocr_vl_sft.jsonl'}")
 
     print(f"\n  Single-line images : {single_count}")
     print(f"  Multi-line images  : {multi_count}")
@@ -370,17 +389,26 @@ if __name__ == "__main__":
     ap.add_argument("--mode",         default="mixed",
                     choices=["single", "multiline", "mixed"],
                     help="Image layout mode (default: mixed)")
+    ap.add_argument("--erniekit",     action="store_true",
+                    help="Also output ERNIEKit SFT format as ocr_vl_sft.jsonl")
+    ap.add_argument("--image_dir",    type=str, default=None,
+                    help="Image directory prefix used in ERNIEKit image_url paths")
     ap.add_argument("--eval",         action="store_true",
-                    help="Eval mode: seed=42, light augmentation, single-line only")
+                    help="Eval preset: seed=42, light augmentation, single-line only")
     ap.add_argument("--preview",      action="store_true")
     args = ap.parse_args()
 
     if args.eval:
         generate(args.count, args.output,
                  seed=42, augmentation="light",
-                 mode="single",   # eval set is single-line for clean annotation
+                 mode="single",
+                 erniekit=args.erniekit,
+                 image_dir=args.image_dir,
                  preview=args.preview)
     else:
         generate(args.count, args.output,
                  seed=args.seed, augmentation=args.augmentation,
-                 mode=args.mode, preview=args.preview)
+                 mode=args.mode,
+                 erniekit=args.erniekit,
+                 image_dir=args.image_dir,
+                 preview=args.preview)
