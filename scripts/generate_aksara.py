@@ -318,21 +318,19 @@ def to_ground_truth(img_name: str, annotations: list[dict]) -> str:
 
 
 def to_erniekit(img_name: str, annotations: list[dict], image_dir: str = "./data/synthetic") -> str:
-    """ERNIEKit SFT format required for erniekit train command."""
+    """
+    PaddleFormers SFT messages format required by `paddleformers-cli train`
+    with `train_dataset_type: messages` in the config. Upstream reference:
+    https://github.com/PaddlePaddle/PaddleFormers/tree/develop/examples/best_practices/PaddleOCR-VL
+    """
     full_text = "\n".join(a["transcription"] for a in annotations)
-    # Normalise path separator
     img_dir = image_dir.rstrip("/").rstrip("\\")
     return json.dumps({
-        "image_info": [
-            {
-                "matched_text_index": 0,
-                "image_url": f"{img_dir}/{img_name}",
-            }
+        "messages": [
+            {"role": "user", "content": "<image>OCR:"},
+            {"role": "assistant", "content": full_text},
         ],
-        "text_info": [
-            {"text": "OCR:", "tag": "mask"},
-            {"text": full_text, "tag": "no_mask"},
-        ],
+        "images": [f"{img_dir}/{img_name}"],
     }, ensure_ascii=False)
 
 

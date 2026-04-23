@@ -78,16 +78,11 @@ def convert_record(record: dict, image_dir: Path, prompt: str = "OCR:") -> dict 
     image_url = str(image_dir / image_name)
 
     return {
-        "image_info": [
-            {
-                "matched_text_index": 0,
-                "image_url": image_url,
-            }
+        "messages": [
+            {"role": "user", "content": f"<image>{prompt}"},
+            {"role": "assistant", "content": transcription},
         ],
-        "text_info": [
-            {"text": prompt, "tag": "mask"},
-            {"text": transcription, "tag": "no_mask"},
-        ],
+        "images": [image_url],
     }
 
 

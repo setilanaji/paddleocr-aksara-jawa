@@ -287,21 +287,26 @@ One JSON object per line. Used for evaluation and reference.
 }
 ```
 
-### 7.3 ERNIEKit SFT Format (ocr_vl_sft.jsonl)
+### 7.3 PaddleFormers SFT Messages Format (ocr_vl_sft.jsonl)
 
-Required format for `paddleformers-cli train`. Generated directly by the generator with `--erniekit` flag, or via `scripts/convert_format.py`.
+Required format for `paddleformers-cli train` when
+`train_dataset_type: messages` is set in the config (our case). Generated
+directly by the generator with the `--erniekit` flag, or via
+`scripts/convert_format.py`. Upstream reference: [PaddleFormers PaddleOCR-VL
+best practice](https://github.com/PaddlePaddle/PaddleFormers/tree/develop/examples/best_practices/PaddleOCR-VL).
 
 ```json
 {
-  "image_info": [{"matched_text_index": 0, "image_url": "./data/synthetic/aksara_0001.jpg"}],
-  "text_info": [
-    {"text": "OCR:", "tag": "mask"},
-    {"text": "ꦲꦤꦏ꧀ꦏꦶꦱꦼꦩꦸꦮꦃ", "tag": "no_mask"}
-  ]
+  "messages": [
+    {"role": "user", "content": "<image>OCR:"},
+    {"role": "assistant", "content": "ꦲꦤꦏ꧀ꦏꦶꦱꦼꦩꦸꦮꦃ"}
+  ],
+  "images": ["./data/synthetic/aksara_0001.jpg"]
 }
 ```
 
-The `"tag": "mask"` marks the prompt as input, `"tag": "no_mask"` marks the transcription as the prediction target.
+The `<image>` placeholder in the user turn marks where the image token is
+inserted; the assistant turn is the prediction target.
 
 ---
 
