@@ -153,7 +153,7 @@ Full end-to-end instructions (launch the pod, install deps, transfer data, run t
 Minimal inside-pod recipe:
 
 ```bash
-pip install paddlepaddle-gpu==3.2.1 \
+pip install paddlepaddle-gpu==3.3.1 \
   -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 pip install paddleformers "paddleocr>=3.0.0"
 

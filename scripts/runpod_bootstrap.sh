@@ -23,7 +23,7 @@ set -euo pipefail
 
 REPO_URL="https://github.com/setilanaji/paddleocr-aksara-jawa.git"
 REPO_DIR="/workspace/paddleocr-aksara-jawa"
-PADDLE_VERSION="3.2.1"
+PADDLE_VERSION="3.3.1"  # paddleformers 1.1+ requires paddle.distributed.fsdp (added in 3.3)
 
 log() { printf "\n\033[1;34m==>\033[0m %s\n" "$*"; }
 warn() { printf "\n\033[1;33m[warn]\033[0m %s\n" "$*"; }

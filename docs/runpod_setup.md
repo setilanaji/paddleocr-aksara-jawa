@@ -50,7 +50,7 @@ Inside the pod:
 cd /workspace
 
 # PaddlePaddle GPU build matching CUDA 12.x
-pip install paddlepaddle-gpu==3.2.1 \
+pip install paddlepaddle-gpu==3.3.1 \
   -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 
 # PaddleFormers (ships ERNIEKit CLI) + PaddleOCR
@@ -244,7 +244,7 @@ paste the number into `README.md` Results and `docs/data_report.md`.
 
 ```bash
 # in the pod
-pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+pip install paddlepaddle-gpu==3.3.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 pip install paddleformers "paddleocr>=3.0.0"
 curl -LsSf https://astral.sh/uv/install.sh | sh && source $HOME/.local/bin/env
 git clone https://github.com/setilanaji/paddleocr-aksara-jawa.git && cd paddleocr-aksara-jawa
