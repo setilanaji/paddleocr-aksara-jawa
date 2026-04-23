@@ -36,13 +36,12 @@ if ! command -v nvidia-smi >/dev/null 2>&1; then
 fi
 CUDA_MAJOR_MINOR=$(nvidia-smi | grep -oE 'CUDA Version: [0-9]+\.[0-9]+' | head -1 | awk '{print $3}')
 CUDA_SHORT=$(echo "$CUDA_MAJOR_MINOR" | tr -d '.')
-# Paddle cu126 / cu124 / cu121 / cu118 wheel indexes — pick nearest match
+# Paddle only ships cu118 and cu126 wheels (cu121 and cu124 indexes exist but
+# are empty). CUDA 12.x runtimes are forward-compatible with cu126 binaries.
 case "$CUDA_SHORT" in
-    126|125) PADDLE_CU=cu126 ;;
-    124)     PADDLE_CU=cu124 ;;
-    123|122|121) PADDLE_CU=cu121 ;;
-    120|118) PADDLE_CU=cu118 ;;
-    *)       warn "Unknown CUDA $CUDA_MAJOR_MINOR, defaulting to cu124"; PADDLE_CU=cu124 ;;
+    128|127|126|125|124|123|122|121|120) PADDLE_CU=cu126 ;;
+    119|118|117|116|115|114|113|112|111|110) PADDLE_CU=cu118 ;;
+    *)       warn "Unknown CUDA $CUDA_MAJOR_MINOR, defaulting to cu126"; PADDLE_CU=cu126 ;;
 esac
 log "CUDA $CUDA_MAJOR_MINOR detected → using $PADDLE_CU Paddle wheel index"
 
