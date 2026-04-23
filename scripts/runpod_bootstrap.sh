@@ -55,6 +55,11 @@ else
 fi
 
 # ── 3. PaddleFormers (ships ERNIEKit) + PaddleOCR ────────────────────────────
+# `blinker` on Debian-based images is a distutils install that pip refuses
+# to uninstall cleanly. Pre-reinstall it so downstream deps can bump it.
+log "Patching distutils-installed blinker (pre-emptive)..."
+pip install -q --ignore-installed blinker
+
 log "Installing paddleformers + paddleocr..."
 pip install -q paddleformers "paddleocr>=3.0.0"
 
