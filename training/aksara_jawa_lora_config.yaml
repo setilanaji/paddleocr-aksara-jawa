@@ -12,7 +12,7 @@
 #   - num_train_epochs 2 → 5     (small training set benefits from more passes)
 #
 # Run with:
-#   erniekit train training/aksara_jawa_lora_config.yaml
+#   paddleformers-cli train training/aksara_jawa_lora_config.yaml
 
 ### data
 train_dataset_type: messages

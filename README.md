@@ -154,11 +154,11 @@ Minimal inside-pod recipe:
 
 ```bash
 pip install paddlepaddle-gpu==3.2.1 \
-  -i https://www.paddlepaddle.org.cn/packages/stable/cu124/
+  -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 pip install paddleformers "paddleocr>=3.0.0"
 
 # LoRA fine-tuning (config is version-controlled at training/aksara_jawa_lora_config.yaml)
-CUDA_VISIBLE_DEVICES=0 erniekit train training/aksara_jawa_lora_config.yaml
+CUDA_VISIBLE_DEVICES=0 paddleformers-cli train training/aksara_jawa_lora_config.yaml
 ```
 
 The config snapshots the exact hyperparameters (lora_rank=16, lora_alpha=32, lr=2e-4, epochs=5) and dataset paths. The upstream reference config is preserved side-by-side at `training/paddleocr-vl_lora_16k_config.yaml` for diff.

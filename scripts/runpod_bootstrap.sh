@@ -69,7 +69,7 @@ python -c "import paddle; paddle.utils.run_check()" || {
     warn "paddle.utils.run_check() failed — see output above."
     exit 1
 }
-log "erniekit CLI: $(command -v erniekit || echo NOT FOUND)"
+log "paddleformers-cli CLI: $(command -v paddleformers-cli || echo NOT FOUND)"
 
 # ── 5. uv + project repo ─────────────────────────────────────────────────────
 if ! command -v uv >/dev/null 2>&1; then
@@ -103,10 +103,10 @@ echo
 echo "Repo       : $REPO_DIR"
 echo "Paddle     : $(python -c 'import paddle; print(paddle.__version__)')"
 echo "uv         : $(uv --version 2>&1)"
-echo "erniekit   : $(command -v erniekit || echo not on PATH)"
+echo "erniekit   : $(command -v paddleformers-cli || echo not on PATH)"
 echo
 echo "Next steps:"
 echo "  cd $REPO_DIR"
 echo "  # Regenerate or rsync data — see docs/runpod_setup.md §5"
 echo "  # Then:"
-echo "  CUDA_VISIBLE_DEVICES=0 erniekit train training/aksara_jawa_lora_config.yaml"
+echo "  CUDA_VISIBLE_DEVICES=0 paddleformers-cli train training/aksara_jawa_lora_config.yaml"

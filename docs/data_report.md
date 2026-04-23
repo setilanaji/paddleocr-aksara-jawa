@@ -289,7 +289,7 @@ One JSON object per line. Used for evaluation and reference.
 
 ### 7.3 ERNIEKit SFT Format (ocr_vl_sft.jsonl)
 
-Required format for `erniekit train`. Generated directly by the generator with `--erniekit` flag, or via `scripts/convert_format.py`.
+Required format for `paddleformers-cli train`. Generated directly by the generator with `--erniekit` flag, or via `scripts/convert_format.py`.
 
 ```json
 {
@@ -381,7 +381,7 @@ Training command (config is version-controlled in the repo at `training/aksara_j
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 \
-erniekit train training/aksara_jawa_lora_config.yaml
+paddleformers-cli train training/aksara_jawa_lora_config.yaml
 ```
 
 The config snapshots the exact hyperparameters, dataset paths, and model identifier used for this run. The upstream reference (`training/paddleocr-vl_lora_16k_config.yaml`) is preserved unchanged in the same directory so reviewers can diff against the project-specific adaptations.

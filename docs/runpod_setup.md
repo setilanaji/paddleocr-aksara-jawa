@@ -49,9 +49,9 @@ Inside the pod:
 ```bash
 cd /workspace
 
-# PaddlePaddle GPU build matching CUDA 12.4
+# PaddlePaddle GPU build matching CUDA 12.x
 pip install paddlepaddle-gpu==3.2.1 \
-  -i https://www.paddlepaddle.org.cn/packages/stable/cu124/
+  -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 
 # PaddleFormers (ships ERNIEKit CLI) + PaddleOCR
 pip install paddleformers>=0.3.0
@@ -59,7 +59,7 @@ pip install "paddleocr>=3.0.0"
 
 # Sanity check — should print a Paddle version and no CUDA errors
 python -c "import paddle; paddle.utils.run_check()"
-which erniekit
+which paddleformers-cli
 ```
 
 If `paddle.utils.run_check()` reports CUDA detected, you're good.
@@ -173,7 +173,7 @@ huggingface-cli download setilanaji/aksara-jawa-ocr \
 cd /workspace/paddleocr-aksara-jawa
 
 # Launch (will download PaddlePaddle/PaddleOCR-VL base weights on first run)
-CUDA_VISIBLE_DEVICES=0 erniekit train training/aksara_jawa_lora_config.yaml
+CUDA_VISIBLE_DEVICES=0 paddleformers-cli train training/aksara_jawa_lora_config.yaml
 
 # Monitoring in another terminal / Jupyter cell
 watch -n 5 nvidia-smi
@@ -244,12 +244,12 @@ paste the number into `README.md` Results and `docs/data_report.md`.
 
 ```bash
 # in the pod
-pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu124/
+pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
 pip install paddleformers "paddleocr>=3.0.0"
 curl -LsSf https://astral.sh/uv/install.sh | sh && source $HOME/.local/bin/env
 git clone https://github.com/setilanaji/paddleocr-aksara-jawa.git && cd paddleocr-aksara-jawa
 uv sync
 # ... data transfer via 5a/b/c ...
-CUDA_VISIBLE_DEVICES=0 erniekit train training/aksara_jawa_lora_config.yaml
+CUDA_VISIBLE_DEVICES=0 paddleformers-cli train training/aksara_jawa_lora_config.yaml
 huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa PaddleOCR-VL-Aksara-Jawa-lora/
 ```
