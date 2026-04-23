@@ -1,0 +1,62 @@
+# Dreamsea manifests — script='Javanese' country='Indonesia'  (scripts/dreamsea_collect.py)
+
+# msid=7550  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=7550
+https://www.vhmml.org/image/manifest/834367
+# msid=1986  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=1986
+https://www.vhmml.org/image/manifest/622733
+# msid=6453  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=6453
+https://www.vhmml.org/image/manifest/816778
+# msid=6614  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=6614
+https://www.vhmml.org/image/manifest/816939
+# msid=1863  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=1863
+https://www.vhmml.org/image/manifest/622610
+# msid=1869  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=1869
+https://www.vhmml.org/image/manifest/622616
+# msid=1996  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=1996
+https://www.vhmml.org/image/manifest/622743
+# msid=1997  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=1997
+https://www.vhmml.org/image/manifest/622744
+# msid=2010  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2010
+https://www.vhmml.org/image/manifest/622757
+# msid=2017  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2017
+https://www.vhmml.org/image/manifest/622764
+# msid=2038  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2038
+https://www.vhmml.org/image/manifest/622785
+# msid=2044  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2044
+https://www.vhmml.org/image/manifest/622791
+# msid=2024  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2024
+https://www.vhmml.org/image/manifest/622771
+# msid=2019  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2019
+https://www.vhmml.org/image/manifest/622766
+# msid=2009  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2009
+https://www.vhmml.org/image/manifest/622756
+# msid=2015  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2015
+https://www.vhmml.org/image/manifest/622762
+# msid=2016  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2016
+https://www.vhmml.org/image/manifest/622763
+# msid=2011  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2011
+https://www.vhmml.org/image/manifest/622758
+# msid=2013  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=2013
+https://www.vhmml.org/image/manifest/622760
+# msid=4599  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=4599
+https://www.vhmml.org/image/manifest/792705
+# msid=607  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=607
+https://www.vhmml.org/image/manifest/520629
+# msid=608  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=608
+https://www.vhmml.org/image/manifest/520630
+# msid=609  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=609
+https://www.vhmml.org/image/manifest/520631
+# msid=610  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=610
+https://www.vhmml.org/image/manifest/520632
+# msid=611  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=611
+https://www.vhmml.org/image/manifest/520633
+# msid=612  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=612
+https://www.vhmml.org/image/manifest/520634
+# msid=613  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=613
+https://www.vhmml.org/image/manifest/520635
+# msid=614  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=614
+https://www.vhmml.org/image/manifest/520636
+# msid=615  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=615
+https://www.vhmml.org/image/manifest/520637
+# msid=616  detail=https://www.hmmlcloud.org/dreamsea/detail.php?msid=616
+https://www.vhmml.org/image/manifest/520638

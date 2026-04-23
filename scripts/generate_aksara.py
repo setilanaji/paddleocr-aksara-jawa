@@ -27,8 +27,11 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 SCRIPT_DIR  = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
 ASSETS_DIR  = PROJECT_DIR / "assets"
-FONT_PATH   = ASSETS_DIR / "NotoSansJavanese-Regular.ttf"
-CORPUS_PATH = ASSETS_DIR / "corpus_jawa.txt"
+FONTS_DIR   = ASSETS_DIR / "fonts"
+# Backward-compat fallback for older repo layout (single font at assets/ root).
+LEGACY_FONT_PATH = ASSETS_DIR / "NotoSansJavanese-Regular.ttf"
+CORPUS_PATH          = ASSETS_DIR / "corpus_jawa.txt"
+PASANGAN_CORPUS_PATH = ASSETS_DIR / "corpus_jawa_pasangan.txt"
 
 # ── Background colours (aged paper / clean tones) ───────────────────────────
 BACKGROUNDS = [
@@ -61,24 +64,90 @@ MULTI_WIDTHS  = [512, 640, 800, 960]
 MULTI_HEIGHTS = [200, 256, 320, 400, 480]
 
 
-def load_corpus() -> list[str]:
-    if not CORPUS_PATH.exists():
-        raise FileNotFoundError(f"Corpus not found: {CORPUS_PATH}")
-    lines = [l.strip() for l in CORPUS_PATH.read_text(encoding="utf-8").splitlines()
-             if l.strip()]
+def load_corpus(path: Path = CORPUS_PATH) -> list[str]:
+    if not path.exists():
+        raise FileNotFoundError(f"Corpus not found: {path}")
+    lines = [l.strip() for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
     if not lines:
-        raise ValueError("Corpus is empty")
+        raise ValueError(f"Corpus is empty: {path}")
     return lines
 
 
-def load_font(size: int) -> ImageFont.FreeTypeFont:
-    if not FONT_PATH.exists():
+def discover_fonts() -> list[Path]:
+    """
+    Find every .ttf file in assets/fonts/ — each is treated as a distinct
+    typographic style for sampling during generation. Falls back to the legacy
+    single-font location if the fonts folder is empty or missing.
+    """
+    fonts: list[Path] = []
+    if FONTS_DIR.exists():
+        fonts = sorted(FONTS_DIR.glob("*.ttf")) + sorted(FONTS_DIR.glob("*.TTF"))
+    if not fonts and LEGACY_FONT_PATH.exists():
+        fonts = [LEGACY_FONT_PATH]
+    if not fonts:
         raise FileNotFoundError(
-            f"Font not found: {FONT_PATH}\n"
-            f"Run: curl -L -o assets/NotoSansJavanese-Regular.ttf "
-            f"https://github.com/notofonts/javanese/raw/main/fonts/ttf/NotoSansJavanese-Regular.ttf"
+            f"No .ttf fonts found in {FONTS_DIR} or {LEGACY_FONT_PATH}.\n"
+            f"Bootstrap with:\n"
+            f"  curl -L -o assets/fonts/NotoSansJavanese-Regular.ttf \\\n"
+            f"    https://github.com/notofonts/javanese/releases/download/NotoSansJavanese-v2.005/NotoSansJavanese-v2.005.zip"
         )
-    return ImageFont.truetype(str(FONT_PATH), size)
+    return fonts
+
+
+def load_font(path: Path, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(str(path), size)
+
+
+def discover_real_backgrounds(real_bg_dir: Path | None) -> list[Path]:
+    """Collect candidate real-manuscript images for semi-synthetic backgrounds."""
+    if real_bg_dir is None:
+        return []
+    if not real_bg_dir.exists():
+        print(f"  WARNING: --real_bg_dir {real_bg_dir} not found, skipping semi-synthetic mode")
+        return []
+    return sorted(real_bg_dir.glob("*.jpg")) + sorted(real_bg_dir.glob("*.jpeg")) \
+         + sorted(real_bg_dir.glob("*.png"))
+
+
+def build_background(
+    img_w: int,
+    img_h: int,
+    bg_color: tuple,
+    real_bg_path: Path | None = None,
+) -> Image.Image:
+    """
+    Build the target-sized canvas the text will be drawn onto.
+
+    If real_bg_path is None → solid background in bg_color (the classic path).
+    Otherwise → semi-synthetic: crop a random patch from the real image,
+    upscale if smaller than the target, heavy Gaussian blur to wash out any
+    underlying script, and a small brightness jitter for variety. Ground
+    truth remains the synthetic text that's drawn on top — the blurred
+    underlying text is ignored noise.
+    """
+    if real_bg_path is None:
+        return Image.new("RGB", (img_w, img_h), bg_color)
+
+    with Image.open(real_bg_path) as src_file:
+        src = src_file.convert("RGB")
+
+    sw, sh = src.size
+    # Ensure the source is at least 1.2× the target in both dims so the crop
+    # doesn't cover the entire page (we want *patches*, not full pages).
+    scale = max(img_w * 1.2 / sw, img_h * 1.2 / sh, 1.0) * random.uniform(1.0, 1.6)
+    if scale > 1.0:
+        src = src.resize((int(sw * scale), int(sh * scale)), Image.LANCZOS)
+        sw, sh = src.size
+
+    x = random.randint(0, max(sw - img_w, 0))
+    y = random.randint(0, max(sh - img_h, 0))
+    patch = src.crop((x, y, x + img_w, y + img_h))
+
+    # Heavy blur to remove legibility of the original script while keeping
+    # paper texture + ink-tone gradients.
+    patch = patch.filter(ImageFilter.GaussianBlur(radius=random.uniform(8.0, 16.0)))
+    patch = ImageEnhance.Brightness(patch).enhance(random.uniform(0.85, 1.15))
+    return patch
 
 
 # ── Single-line rendering ────────────────────────────────────────────────────
@@ -86,18 +155,18 @@ def load_font(size: int) -> ImageFont.FreeTypeFont:
 def render_single(
     text: str,
     font_size: int,
-    img_w: int,
-    img_h: int,
-    bg_color: tuple,
+    canvas: Image.Image,
     text_color: tuple,
+    font_path: Path,
 ) -> tuple[Image.Image, list[dict]]:
     """
-    Render one line of Aksara Jawa text.
+    Render one line of Aksara Jawa text onto the provided canvas.
     Returns (image, annotations) where annotations is a list of one box.
     """
-    img  = Image.new("RGB", (img_w, img_h), bg_color)
+    img  = canvas.copy()
+    img_w, img_h = img.size
     draw = ImageDraw.Draw(img)
-    font = load_font(font_size)
+    font = load_font(font_path, font_size)
 
     bbox = draw.textbbox((0, 0), text, font=font)
     tw   = bbox[2] - bbox[0]
@@ -124,20 +193,20 @@ def render_single(
 def render_multiline(
     lines: list[str],
     font_size: int,
-    img_w: int,
-    img_h: int,
-    bg_color: tuple,
+    canvas: Image.Image,
     text_color: tuple,
+    font_path: Path,
     line_spacing_factor: float = 1.6,
 ) -> tuple[Image.Image, list[dict]]:
     """
-    Render multiple lines of Aksara Jawa text as a paragraph block.
-    Each line gets its own bounding box annotation.
+    Render multiple lines of Aksara Jawa text as a paragraph block onto the
+    provided canvas. Each line gets its own bounding box annotation.
     Returns (image, annotations).
     """
-    img   = Image.new("RGB", (img_w, img_h), bg_color)
+    img   = canvas.copy()
+    img_w, img_h = img.size
     draw  = ImageDraw.Draw(img)
-    font  = load_font(font_size)
+    font  = load_font(font_path, font_size)
     anns  = []
 
     ref_bbox  = draw.textbbox((0, 0), "ꦲ", font=font)
@@ -158,11 +227,10 @@ def render_multiline(
 
         max_w = img_w - margin_x - 16
         if font.getlength(line_text) > max_w:
-            while font.getlength(line_text) > max_w and len(line_text) > 2:
-                line_text = line_text[:-1]
-            bbox = draw.textbbox((0, 0), line_text, font=font)
-            tw   = bbox[2] - bbox[0]
-            th   = bbox[3] - bbox[1]
+            # Line too wide for the image — skip it entirely rather than
+            # truncate mid-character (truncation would mismatch the GT text
+            # against the rendered pixels and poison training).
+            continue
 
         draw.text((margin_x, y), line_text, font=font, fill=text_color)
 
@@ -185,14 +253,21 @@ def render_multiline(
 
 # ── Augmentation ─────────────────────────────────────────────────────────────
 
-def augment(img: Image.Image, severity: str = "medium") -> Image.Image:
+def augment(
+    img: Image.Image,
+    severity: str = "medium",
+    bg_color: tuple | None = None,
+) -> Image.Image:
     rng = random.random
 
     max_angle = {"light": 2, "medium": 5, "heavy": 10}.get(severity, 5)
     angle = random.uniform(-max_angle, max_angle)
     if abs(angle) > 0.3:
-        bg = img.getpixel((2, 2))
-        img = img.rotate(angle, expand=False, fillcolor=bg)
+        # Prefer the explicit background colour from the caller — safer than
+        # sampling a pixel which can land on drawn text and bleed dark ink
+        # into the rotated corners.
+        fill = bg_color if bg_color is not None else img.getpixel((0, 0))
+        img = img.rotate(angle, expand=False, fillcolor=fill)
 
     blur_p = {"light": 0.2, "medium": 0.4, "heavy": 0.65}.get(severity, 0.4)
     if rng() < blur_p:
@@ -264,14 +339,17 @@ def to_erniekit(img_name: str, annotations: list[dict], image_dir: str = "./data
 # ── Main generation loop ──────────────────────────────────────────────────────
 
 def generate(
-    count:        int,
-    output_dir:   str,
-    seed:         int  = None,
-    augmentation: str  = "mixed",
-    mode:         str  = "mixed",
-    erniekit:     bool = False,
-    image_dir:    str  = None,
-    preview:      bool = False,
+    count:          int,
+    output_dir:     str,
+    seed:           int  = None,
+    augmentation:   str  = "mixed",
+    mode:           str  = "mixed",
+    erniekit:       bool = False,
+    image_dir:      str  = None,
+    preview:        bool = False,
+    pasangan_ratio: float = 0.0,
+    real_bg_dir:    Path | None = None,
+    real_bg_ratio:  float = 0.0,
 ):
     if seed is not None:
         random.seed(seed)
@@ -279,22 +357,40 @@ def generate(
 
     out    = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
-    corpus = load_corpus()
-    print(f"Loaded corpus: {len(corpus)} lines")
 
-    # Severity distribution
+    corpus = load_corpus(CORPUS_PATH)
+    print(f"Loaded corpus: {len(corpus)} lines from {CORPUS_PATH.name}")
+
+    pasangan_corpus: list[str] = []
+    if pasangan_ratio > 0 and PASANGAN_CORPUS_PATH.exists():
+        pasangan_corpus = load_corpus(PASANGAN_CORPUS_PATH)
+        print(f"Loaded pasangan-stress corpus: {len(pasangan_corpus)} lines "
+              f"(ratio {pasangan_ratio:.0%})")
+
+    fonts = discover_fonts()
+    print(f"Fonts available: {[f.name for f in fonts]}")
+
+    real_backgrounds: list[Path] = []
+    if real_bg_ratio > 0:
+        real_backgrounds = discover_real_backgrounds(real_bg_dir)
+        if real_backgrounds:
+            print(f"Real-background pool: {len(real_backgrounds)} images from {real_bg_dir} "
+                  f"(ratio {real_bg_ratio:.0%})")
+        else:
+            print(f"  WARNING: --real_bg_ratio={real_bg_ratio} but no backgrounds found — falling back to solid colours")
+            real_bg_ratio = 0.0
+
+    # Severity distribution — 40% light, 40% medium, 20% heavy when mixed.
     if augmentation == "mixed":
-        pool = (["light"] * 40 + ["medium"] * 40 + ["heavy"] * 20) * (count // 100 + 2)
-        random.shuffle(pool)
-        sevs = pool[:count]
+        sevs = random.choices(
+            ["light", "medium", "heavy"], weights=[40, 40, 20], k=count
+        )
     else:
         sevs = [augmentation] * count
 
-    # Mode distribution: 60% single-line, 40% multi-line
+    # Mode distribution — 60% single-line, 40% multi-line when mixed.
     if mode == "mixed":
-        mode_pool = (["single"] * 60 + ["multiline"] * 40) * (count // 100 + 2)
-        random.shuffle(mode_pool)
-        modes = mode_pool[:count]
+        modes = random.choices(["single", "multiline"], weights=[60, 40], k=count)
     else:
         modes = [mode] * count
 
@@ -303,33 +399,58 @@ def generate(
     print(f"\nGenerating {count} images → {out.resolve()}\n")
 
     for i in range(count):
-        name      = f"aksara_{str(i + 1).zfill(4)}.jpg"
-        bg        = random.choice(BACKGROUNDS)
-        fg        = random.choice(TEXT_COLORS)
-        img_mode  = modes[i]
-        sev       = sevs[i]
+        name     = f"aksara_{str(i + 1).zfill(4)}.jpg"
+        img_mode = modes[i]
+        sev      = sevs[i]
 
-        if img_mode == "single":
-            text      = random.choice(corpus)
-            font_size = random.choice([18, 20, 22, 24, 26, 28, 32])
-            img_w     = random.choice(SINGLE_WIDTHS)
-            img_h     = random.choice(SINGLE_HEIGHTS)
-            img, anns = render_single(text, font_size, img_w, img_h, bg, fg)
-            single_count += 1
-        else:
-            n_lines   = random.randint(2, 5)
-            lines     = random.choices(corpus, k=n_lines)
-            font_size = random.choice([16, 18, 20, 22, 24])
-            img_w     = random.choice(MULTI_WIDTHS)
-            img_h     = random.choice(MULTI_HEIGHTS)
-            img, anns = render_multiline(lines, font_size, img_w, img_h, bg, fg)
-            multi_count += 1
+        # Pick the corpus for this image — pasangan-stress at the requested ratio.
+        pick_pasangan = pasangan_corpus and random.random() < pasangan_ratio
+        active_corpus = pasangan_corpus if pick_pasangan else corpus
+
+        # Decide whether this image uses a real-manuscript background (semi-synthetic)
+        # or a solid colour — keep the decision at the image level, not per-retry,
+        # so we don't flip back and forth across attempts.
+        use_real_bg = real_backgrounds and random.random() < real_bg_ratio
+
+        # Retry with smaller font / different corpus lines until at least one
+        # annotation fits. Avoids the old behaviour of emitting placeholder
+        # illegibility:true boxes that would poison training.
+        img, anns, bg = None, [], None
+        for attempt in range(5):
+            bg        = random.choice(BACKGROUNDS)
+            fg        = random.choice(TEXT_COLORS)
+            font_path = random.choice(fonts)
+            real_bg_path = random.choice(real_backgrounds) if use_real_bg else None
+            if img_mode == "single":
+                text      = random.choice(active_corpus)
+                font_size = random.choice([18, 20, 22, 24, 26, 28, 32])
+                img_w     = random.choice(SINGLE_WIDTHS)
+                img_h     = random.choice(SINGLE_HEIGHTS)
+                canvas    = build_background(img_w, img_h, bg, real_bg_path)
+                img, anns = render_single(text, font_size, canvas, fg, font_path)
+            else:
+                n_lines   = random.randint(2, 5)
+                lines     = random.sample(active_corpus, k=min(n_lines, len(active_corpus)))
+                # Start with the randomized font; shrink on retries so content fits.
+                font_size = max(14, random.choice([16, 18, 20, 22, 24]) - attempt * 2)
+                img_w     = random.choice(MULTI_WIDTHS)
+                img_h     = random.choice(MULTI_HEIGHTS)
+                canvas    = build_background(img_w, img_h, bg, real_bg_path)
+                img, anns = render_multiline(lines, font_size, canvas, fg, font_path)
+            if anns:
+                break
 
         if not anns:
-            anns = [{"transcription": "", "points": [[0,0],[1,0],[1,1],[0,1]],
-                     "label": "aksara_jawa", "illegibility": True}]
+            # Extremely unusual — give up on this index and move on.
+            print(f"  WARNING: could not render {name} after 5 attempts; skipping")
+            continue
 
-        img = augment(img, severity=sev)
+        if img_mode == "single":
+            single_count += 1
+        else:
+            multi_count += 1
+
+        img = augment(img, severity=sev, bg_color=bg)
         img.save(out / name, format="JPEG", quality=random.randint(82, 95))
 
         labels.append(to_label_txt(name, anns))
@@ -346,18 +467,22 @@ def generate(
     (out / "Label.txt").write_text("\n".join(labels), encoding="utf-8")
     (out / "ground_truth.jsonl").write_text("\n".join(gts), encoding="utf-8")
     (out / "dataset_stats.json").write_text(json.dumps({
-        "total_images":   count,
-        "single_line":    single_count,
-        "multi_line":     multi_count,
-        "corpus_lines":   len(corpus),
-        "font":           FONT_PATH.name,
-        "augmentation":   {s: sevs.count(s) for s in ("light", "medium", "heavy")},
-        "mode":           mode,
-        "seed":           seed,
-        "erniekit":       erniekit,
-        "task":           "aksara_jawa_ocr",
-        "language":       "Javanese (Aksara Jawa)",
-        "unicode_block":  "U+A980–U+A9DF",
+        "total_images":     count,
+        "single_line":      single_count,
+        "multi_line":       multi_count,
+        "corpus_lines":     len(corpus),
+        "pasangan_corpus_lines": len(pasangan_corpus),
+        "pasangan_ratio":   pasangan_ratio,
+        "fonts":            [f.name for f in fonts],
+        "real_bg_pool":     len(real_backgrounds),
+        "real_bg_ratio":    real_bg_ratio,
+        "augmentation":     {s: sevs.count(s) for s in ("light", "medium", "heavy")},
+        "mode":             mode,
+        "seed":             seed,
+        "erniekit":         erniekit,
+        "task":             "aksara_jawa_ocr",
+        "language":         "Javanese (Aksara Jawa)",
+        "unicode_block":    "U+A980–U+A9DF",
     }, indent=2, ensure_ascii=False))
 
     if erniekit:
@@ -389,13 +514,21 @@ if __name__ == "__main__":
     ap.add_argument("--mode",         default="mixed",
                     choices=["single", "multiline", "mixed"],
                     help="Image layout mode (default: mixed)")
-    ap.add_argument("--erniekit",     action="store_true",
+    ap.add_argument("--erniekit",       action="store_true",
                     help="Also output ERNIEKit SFT format as ocr_vl_sft.jsonl")
-    ap.add_argument("--image_dir",    type=str, default=None,
+    ap.add_argument("--image_dir",      type=str, default=None,
                     help="Image directory prefix used in ERNIEKit image_url paths")
-    ap.add_argument("--eval",         action="store_true",
-                    help="Eval preset: seed=42, light augmentation, single-line only")
-    ap.add_argument("--preview",      action="store_true")
+    ap.add_argument("--pasangan_ratio", type=float, default=0.0,
+                    help="Fraction of images sampled from the pasangan-stress corpus "
+                         "(assets/corpus_jawa_pasangan.txt); 0.0 disables, 0.2 recommended for training")
+    ap.add_argument("--real_bg_dir",    type=Path, default=None,
+                    help="Folder of real manuscript images to use as semi-synthetic backgrounds "
+                         "(e.g. data/real/). Blurred + cropped to patches, text rendered on top")
+    ap.add_argument("--real_bg_ratio",  type=float, default=0.0,
+                    help="Fraction of images that use a real-background patch instead of solid colour")
+    ap.add_argument("--eval",           action="store_true",
+                    help="Eval preset: seed=42, light augmentation, single-line only, no pasangan stress")
+    ap.add_argument("--preview",        action="store_true")
     args = ap.parse_args()
 
     if args.eval:
@@ -404,11 +537,17 @@ if __name__ == "__main__":
                  mode="single",
                  erniekit=args.erniekit,
                  image_dir=args.image_dir,
-                 preview=args.preview)
+                 preview=args.preview,
+                 pasangan_ratio=0.0,
+                 real_bg_dir=None,
+                 real_bg_ratio=0.0)
     else:
         generate(args.count, args.output,
                  seed=args.seed, augmentation=args.augmentation,
                  mode=args.mode,
                  erniekit=args.erniekit,
                  image_dir=args.image_dir,
-                 preview=args.preview)
+                 preview=args.preview,
+                 pasangan_ratio=args.pasangan_ratio,
+                 real_bg_dir=args.real_bg_dir,
+                 real_bg_ratio=args.real_bg_ratio)

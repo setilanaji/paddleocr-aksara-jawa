@@ -1,0 +1,30 @@
+<View>
+  <Header value="Tarik kotak di sekitar setiap baris teks Aksara Jawa, lalu ketik transkripsi Unicode."/>
+
+  <Image name="image" value="$image"
+         zoom="true"
+         zoomControl="true"
+         rotateControl="true"
+         brightnessControl="true"
+         contrastControl="true"/>
+
+  <RectangleLabels name="bbox" toName="image">
+    <Label value="line" background="#2196F3" hotkey="1"/>
+    <Label value="illegible" background="#FF5252" hotkey="2"/>
+  </RectangleLabels>
+
+  <TextArea name="transcription" toName="image"
+            editable="true"
+            perRegion="true"
+            required="true"
+            placeholder="Ketik Unicode Aksara Jawa di sini (ꦲꦤꦕꦫꦏ)..."
+            displayMode="region-list"
+            rows="2"
+            maxSubmissions="1"/>
+
+  <Choices name="script_type" toName="image" perRegion="true" required="false">
+    <Choice value="printed"/>
+    <Choice value="handwritten"/>
+    <Choice value="manuscript"/>
+  </Choices>
+</View>

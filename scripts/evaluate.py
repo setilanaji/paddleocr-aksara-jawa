@@ -5,62 +5,120 @@ Evaluation script for PaddleOCR-VL Aksara Jawa fine-tuned model.
 Computes Character Error Rate (CER), Word Error Rate (WER), and exact match
 accuracy against the ground truth annotations in ground_truth.jsonl.
 
+Uses the transformers + trust_remote_code pattern to load PaddleOCR-VL
+(the VLM, not the classic det+rec pipeline) and jiwer for metric calculation.
+Both reference and hypothesis are Unicode NFC-normalised before comparison,
+so precomposed vs decomposed Javanese sequences don't score as different.
+
 Usage:
-    # Evaluate against ground truth only (no model inference — checks annotation quality)
+    # Sanity-check ground truth only (no model inference)
     uv run python scripts/evaluate.py --gt_only --eval_dir data/eval/
 
-    # Evaluate model predictions against ground truth
-    uv run python scripts/evaluate.py \
-        --model_path ./output/aksara_model \
-        --eval_dir data/eval/ \
+    # Evaluate a model (requires the `eval` extras: uv sync --extra eval)
+    uv run --extra eval python scripts/evaluate.py \\
+        --model_path setilanaji/PaddleOCR-VL-Aksara-Jawa \\
+        --eval_dir data/eval/ \\
         --output results.json
 
     # Evaluate from a predictions file (one prediction per line, matching GT order)
-    uv run python scripts/evaluate.py \
-        --predictions predictions.txt \
-        --eval_dir data/eval/ \
+    uv run python scripts/evaluate.py \\
+        --predictions predictions.txt \\
+        --eval_dir data/eval/ \\
         --output results.json
 """
 
 import argparse
 import json
-import os
 import sys
+import unicodedata
 from pathlib import Path
 
-# ── Metrics ──────────────────────────────────────────────────────────────────
+from jiwer import cer as jiwer_cer, wer as jiwer_wer
 
-def edit_distance(a: str, b: str) -> int:
-    """Standard dynamic programming edit distance (Levenshtein)."""
-    m, n = len(a), len(b)
-    dp = list(range(n + 1))
-    for i in range(1, m + 1):
-        prev = dp[0]
-        dp[0] = i
-        for j in range(1, n + 1):
-            temp = dp[j]
-            if a[i - 1] == b[j - 1]:
-                dp[j] = prev
-            else:
-                dp[j] = 1 + min(prev, dp[j], dp[j - 1])
-            prev = temp
-    return dp[n]
+
+DEFAULT_PROMPT = "OCR:"
+
+
+def normalize(s: str) -> str:
+    """NFC-normalize and strip — applied to both hyp and ref before scoring."""
+    return unicodedata.normalize("NFC", s or "").strip()
 
 
 def cer(hypothesis: str, reference: str) -> float:
-    """Character Error Rate = edit_distance(hyp, ref) / len(ref)."""
-    if len(reference) == 0:
-        return 0.0 if len(hypothesis) == 0 else 1.0
-    return edit_distance(hypothesis, reference) / len(reference)
+    """Character Error Rate. jiwer.cer handles empty-ref edge cases correctly."""
+    ref = normalize(reference)
+    hyp = normalize(hypothesis)
+    if not ref:
+        return 0.0 if not hyp else 1.0
+    return float(jiwer_cer(ref, hyp))
 
 
 def wer(hypothesis: str, reference: str) -> float:
-    """Word Error Rate = edit_distance(hyp_words, ref_words) / len(ref_words)."""
-    ref_words = reference.split()
-    hyp_words = hypothesis.split()
-    if len(ref_words) == 0:
-        return 0.0 if len(hyp_words) == 0 else 1.0
-    return edit_distance(hyp_words, ref_words) / len(ref_words)
+    """Word Error Rate."""
+    ref = normalize(reference)
+    hyp = normalize(hypothesis)
+    if not ref.split():
+        return 0.0 if not hyp.split() else 1.0
+    return float(jiwer_wer(ref, hyp))
+
+
+# ── Pasangan (stacked-consonant) metric ───────────────────────────────────────
+#
+# Aksara Jawa doesn't have a dedicated pasangan codepoint — a pasangan cluster
+# is encoded as Consonant + PANGKON (U+A9C0, virama) + Consonant. The renderer
+# produces the stacked form. We count these clusters in ref vs hyp as a direct
+# measure of how well the model handles the script's most visually complex
+# element.
+
+PANGKON = "꧀"
+# Javanese letters (carakan + murda + additional letters), per Unicode block
+# allocation in U+A984–U+A9B2. Excludes sandhangan (marks) and punctuation.
+_JAV_LETTER_RANGE = range(0xA984, 0xA9B3)
+
+
+def _is_jav_letter(c: str) -> bool:
+    return bool(c) and ord(c) in _JAV_LETTER_RANGE
+
+
+def pasangan_clusters(s: str) -> list[str]:
+    """All C + pangkon + C triples in s, preserving duplicates."""
+    out: list[str] = []
+    s = normalize(s)
+    for i in range(len(s) - 2):
+        if (
+            s[i + 1] == PANGKON
+            and _is_jav_letter(s[i])
+            and _is_jav_letter(s[i + 2])
+        ):
+            out.append(s[i : i + 3])
+    return out
+
+
+def pasangan_metrics(hypothesis: str, reference: str) -> dict:
+    """
+    Return {ref_count, hyp_count, correct, recall, precision, f1} for pasangan
+    clusters. Multi-set intersection: counts each distinct triple by how many
+    times it appears in both strings.
+    """
+    from collections import Counter
+
+    ref_c = Counter(pasangan_clusters(reference))
+    hyp_c = Counter(pasangan_clusters(hypothesis))
+    ref_n = sum(ref_c.values())
+    hyp_n = sum(hyp_c.values())
+    correct = sum((ref_c & hyp_c).values())
+
+    recall = correct / ref_n if ref_n else (1.0 if hyp_n == 0 else 0.0)
+    precision = correct / hyp_n if hyp_n else (1.0 if ref_n == 0 else 0.0)
+    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+    return {
+        "ref_count": ref_n,
+        "hyp_count": hyp_n,
+        "correct": correct,
+        "recall": round(recall, 4),
+        "precision": round(precision, 4),
+        "f1": round(f1, 4),
+    }
 
 
 # ── Ground truth loading ──────────────────────────────────────────────────────
@@ -87,8 +145,9 @@ def load_ground_truth(eval_dir: Path) -> list[dict]:
                 text = turn.get("content", "")
                 break
         records.append({
-            "image": obj["image"],
-            "text":  text,
+            "image":       obj["image"],
+            "text":        text,
+            "script_type": obj.get("script_type") or "unspecified",
         })
     return records
 
@@ -99,50 +158,80 @@ def run_model_inference(
     model_path: str,
     eval_dir: Path,
     ground_truth: list[dict],
+    prompt: str = DEFAULT_PROMPT,
+    max_new_tokens: int = 512,
 ) -> list[str]:
     """
-    Run PaddleOCR-VL inference on eval images.
-    Returns list of predicted strings in same order as ground_truth.
+    Run PaddleOCR-VL inference on eval images via the HuggingFace transformers
+    interface with trust_remote_code. Returns predictions in ground_truth order.
     """
     try:
-        from paddleocr import PaddleOCR
-    except ImportError:
-        print("ERROR: paddleocr not installed. Run: uv sync --extra paddle")
+        import torch
+        from PIL import Image
+        from transformers import AutoModelForCausalLM, AutoProcessor
+    except ImportError as e:
+        print(
+            f"ERROR: inference dependencies missing ({e}). Install with:\n"
+            f"    uv sync --extra eval"
+        )
         sys.exit(1)
 
     print(f"Loading model from: {model_path}")
-    ocr = PaddleOCR(
-        text_detection_model_dir=model_path,
-        text_recognition_model_dir=model_path,
-        use_doc_orientation_classify=False,
-        use_doc_unwarping=False,
-        use_textline_orientation=False,
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        trust_remote_code=True,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+    ).eval()
+    processor = AutoProcessor.from_pretrained(
+        model_path, trust_remote_code=True, use_fast=True
     )
+    if model.generation_config.pad_token_id is None:
+        model.generation_config.pad_token_id = processor.tokenizer.eos_token_id
 
-    predictions = []
+    predictions: list[str] = []
     for i, record in enumerate(ground_truth):
-        img_path = str(eval_dir / record["image"])
-        if not os.path.exists(img_path):
+        img_path = eval_dir / record["image"]
+        if not img_path.exists():
             print(f"  WARNING: image not found: {img_path}")
             predictions.append("")
             continue
 
         try:
-            result = ocr.predict(input=img_path)
-            # Collect all recognised text lines
-            lines = []
-            for res in result:
-                if hasattr(res, "rec_texts"):
-                    lines.extend(res.rec_texts)
-                elif isinstance(res, dict) and "rec_texts" in res:
-                    lines.extend(res["rec_texts"])
-            pred = "\n".join(lines).strip()
+            image = Image.open(img_path).convert("RGB")
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "image": image},
+                        {"type": "text", "text": prompt},
+                    ],
+                }
+            ]
+            text = processor.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            inputs = processor(text=[text], images=[image], return_tensors="pt")
+            inputs = {
+                k: (v.to(model.device) if isinstance(v, torch.Tensor) else v)
+                for k, v in inputs.items()
+            }
+            with torch.inference_mode():
+                generated = model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    use_cache=True,
+                )
+            input_length = inputs["input_ids"].shape[1]
+            pred = processor.batch_decode(
+                generated[:, input_length:], skip_special_tokens=True
+            )[0].strip()
         except Exception as e:
             print(f"  WARNING: inference failed for {record['image']}: {e}")
             pred = ""
 
         predictions.append(pred)
-
         if (i + 1) % 25 == 0 or i == 0:
             print(f"  [{i+1:>4}/{len(ground_truth)}] {record['image']}")
 
@@ -151,83 +240,166 @@ def run_model_inference(
 
 # ── Evaluation ────────────────────────────────────────────────────────────────
 
+def _aggregate(records: list[dict]) -> dict:
+    """Aggregate per-image records into overall + pasangan + counts."""
+    if not records:
+        return {
+            "total_images":  0,
+            "mean_cer":      0.0,
+            "mean_wer":      0.0,
+            "exact_matches": 0,
+            "exact_rate":    0.0,
+            "pasangan":      {"ref_count": 0, "correct": 0, "recall": 0.0, "precision": 0.0, "f1": 0.0},
+        }
+    n = len(records)
+    mean_cer = sum(r["cer"] for r in records) / n
+    mean_wer = sum(r["wer"] for r in records) / n
+    exact_matches = sum(1 for r in records if r["exact_match"])
+
+    # Pasangan aggregated across all records — sum counts, then recompute
+    pas_ref = sum(r["pasangan"]["ref_count"] for r in records)
+    pas_hyp = sum(r["pasangan"]["hyp_count"] for r in records)
+    pas_correct = sum(r["pasangan"]["correct"] for r in records)
+    recall = pas_correct / pas_ref if pas_ref else (1.0 if pas_hyp == 0 else 0.0)
+    precision = pas_correct / pas_hyp if pas_hyp else (1.0 if pas_ref == 0 else 0.0)
+    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+
+    return {
+        "total_images":  n,
+        "mean_cer":      round(mean_cer, 4),
+        "mean_wer":      round(mean_wer, 4),
+        "exact_matches": exact_matches,
+        "exact_rate":    round(exact_matches / n, 4),
+        "pasangan": {
+            "ref_count": pas_ref,
+            "hyp_count": pas_hyp,
+            "correct":   pas_correct,
+            "recall":    round(recall, 4),
+            "precision": round(precision, 4),
+            "f1":        round(f1, 4),
+        },
+    }
+
+
 def evaluate(
     predictions: list[str],
     ground_truth: list[dict],
     verbose: bool = False,
 ) -> dict:
     """
-    Compute CER, WER, exact match, and per-image breakdown.
+    Compute CER, WER, exact match, pasangan recall/precision, and per-tier
+    aggregates (printed/handwritten/manuscript/unspecified).
     """
     assert len(predictions) == len(ground_truth), \
         f"Prediction count ({len(predictions)}) != ground truth count ({len(ground_truth)})"
 
-    total_cer     = 0.0
-    total_wer     = 0.0
-    exact_matches = 0
-    per_image     = []
-
+    per_image: list[dict] = []
     for pred, gt in zip(predictions, ground_truth):
-        ref  = gt["text"].strip()
-        hyp  = pred.strip()
+        ref = normalize(gt["text"])
+        hyp = normalize(pred)
 
         c = cer(hyp, ref)
         w = wer(hyp, ref)
         exact = (hyp == ref)
-
-        total_cer     += c
-        total_wer     += w
-        exact_matches += int(exact)
+        pas = pasangan_metrics(hyp, ref)
 
         per_image.append({
             "image":       gt["image"],
+            "script_type": gt.get("script_type", "unspecified"),
             "reference":   ref,
             "hypothesis":  hyp,
             "cer":         round(c, 4),
             "wer":         round(w, 4),
             "exact_match": exact,
+            "pasangan":    pas,
         })
 
         if verbose and not exact:
-            print(f"  MISS  {gt['image']}")
+            print(f"  MISS  {gt['image']}  ({gt.get('script_type', 'unspecified')})")
             print(f"    REF: {ref}")
             print(f"    HYP: {hyp}")
-            print(f"    CER: {c:.4f}  WER: {w:.4f}")
+            print(f"    CER: {c:.4f}  WER: {w:.4f}  pasangan F1: {pas['f1']:.4f}")
 
-    n = len(ground_truth)
-    mean_cer     = total_cer / n
-    mean_wer     = total_wer / n
-    exact_rate   = exact_matches / n
+    overall = _aggregate(per_image)
+
+    # Per-tier breakdown
+    tiers: dict[str, list[dict]] = {}
+    for r in per_image:
+        tiers.setdefault(r["script_type"], []).append(r)
+    per_tier = {tier: _aggregate(recs) for tier, recs in tiers.items()}
 
     return {
-        "total_images":   n,
-        "mean_cer":       round(mean_cer,   4),
-        "mean_wer":       round(mean_wer,   4),
-        "exact_matches":  exact_matches,
-        "exact_rate":     round(exact_rate, 4),
-        "per_image":      per_image,
+        **overall,
+        "per_tier":  per_tier,
+        "per_image": per_image,
     }
+
+
+def diff_results(fine_tuned: dict, baseline: dict) -> dict:
+    """Build a comparison summary: baseline vs fine-tuned, overall + per-tier."""
+    def _diff(a: dict, b: dict) -> dict:
+        return {
+            "cer_baseline":     b["mean_cer"],
+            "cer_fine_tuned":   a["mean_cer"],
+            "cer_delta":        round(a["mean_cer"] - b["mean_cer"], 4),
+            "wer_baseline":     b["mean_wer"],
+            "wer_fine_tuned":   a["mean_wer"],
+            "wer_delta":        round(a["mean_wer"] - b["mean_wer"], 4),
+            "exact_baseline":   b["exact_rate"],
+            "exact_fine_tuned": a["exact_rate"],
+            "exact_delta":      round(a["exact_rate"] - b["exact_rate"], 4),
+            "pasangan_f1_baseline":   b["pasangan"]["f1"],
+            "pasangan_f1_fine_tuned": a["pasangan"]["f1"],
+            "pasangan_f1_delta":      round(a["pasangan"]["f1"] - b["pasangan"]["f1"], 4),
+        }
+
+    result: dict = {"overall": _diff(fine_tuned, baseline), "per_tier": {}}
+    shared_tiers = set(fine_tuned.get("per_tier", {})) & set(baseline.get("per_tier", {}))
+    for tier in sorted(shared_tiers):
+        result["per_tier"][tier] = _diff(
+            fine_tuned["per_tier"][tier], baseline["per_tier"][tier]
+        )
+    return result
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+def _print_summary(results: dict, label: str) -> None:
+    pas = results.get("pasangan", {})
+    print(f"  {label}")
+    print(f"    Images          : {results['total_images']}")
+    print(f"    Mean CER        : {results['mean_cer']:.4f} ({results['mean_cer']*100:.2f}%)")
+    print(f"    Mean WER        : {results['mean_wer']:.4f} ({results['mean_wer']*100:.2f}%)")
+    print(f"    Exact matches   : {results['exact_matches']} / {results['total_images']} ({results['exact_rate']*100:.2f}%)")
+    if pas.get("ref_count"):
+        print(
+            f"    Pasangan        : recall={pas['recall']:.4f}  "
+            f"precision={pas['precision']:.4f}  F1={pas['f1']:.4f}  "
+            f"(ref={pas['ref_count']} hyp={pas['hyp_count']} correct={pas['correct']})"
+        )
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Evaluate Aksara Jawa OCR model using CER, WER, and exact match.")
-    ap.add_argument("--eval_dir",    type=str, default="data/eval/",
+    ap.add_argument("--eval_dir",            type=str, default="data/eval/",
                     help="Directory containing ground_truth.jsonl and images")
-    ap.add_argument("--model_path",  type=str, default=None,
-                    help="Path to fine-tuned PaddleOCR-VL model directory")
-    ap.add_argument("--predictions", type=str, default=None,
+    ap.add_argument("--model_path",          type=str, default=None,
+                    help="Path or HF repo id of the fine-tuned PaddleOCR-VL model")
+    ap.add_argument("--baseline_model_path", type=str, default=None,
+                    help="Second model to compare against (e.g. PaddlePaddle/PaddleOCR-VL for the base model)")
+    ap.add_argument("--predictions",         type=str, default=None,
                     help="Path to predictions file (one prediction per line)")
-    ap.add_argument("--output",      type=str, default="results.json",
+    ap.add_argument("--output",              type=str, default="results.json",
                     help="Output path for results JSON")
-    ap.add_argument("--gt_only",     action="store_true",
+    ap.add_argument("--gt_only",             action="store_true",
                     help="Check ground truth only (no inference) — for validation")
-    ap.add_argument("--verbose",     action="store_true",
+    ap.add_argument("--verbose",             action="store_true",
                     help="Print mismatches during evaluation")
-    ap.add_argument("--top_k",       type=int, default=10,
+    ap.add_argument("--top_k",               type=int, default=10,
                     help="Number of worst-performing images to print (default: 10)")
+    ap.add_argument("--prompt",              type=str, default=DEFAULT_PROMPT,
+                    help="OCR prompt sent to the model (default: 'OCR:')")
     args = ap.parse_args()
 
     eval_dir = Path(args.eval_dir)
@@ -260,7 +432,9 @@ def main():
     # Model inference
     elif args.model_path:
         print(f"\nRunning model inference on {len(ground_truth)} images...")
-        predictions = run_model_inference(args.model_path, eval_dir, ground_truth)
+        predictions = run_model_inference(
+            args.model_path, eval_dir, ground_truth, prompt=args.prompt
+        )
 
     else:
         print("ERROR: provide one of --gt_only, --predictions, or --model_path")
@@ -271,23 +445,58 @@ def main():
     print("\nComputing metrics...")
     results = evaluate(predictions, ground_truth, verbose=args.verbose)
 
+    # Optional baseline run
+    baseline_results = None
+    if args.baseline_model_path:
+        print(f"\nRunning baseline inference: {args.baseline_model_path}")
+        baseline_preds = run_model_inference(
+            args.baseline_model_path, eval_dir, ground_truth, prompt=args.prompt
+        )
+        baseline_results = evaluate(baseline_preds, ground_truth, verbose=False)
+        results["baseline"] = baseline_results
+        results["diff"] = diff_results(results, baseline_results)
+
     # Print summary
-    print("\n" + "=" * 50)
-    print("EVALUATION RESULTS")
-    print("=" * 50)
-    print(f"  Images evaluated : {results['total_images']}")
-    print(f"  Mean CER         : {results['mean_cer']:.4f} ({results['mean_cer']*100:.2f}%)")
-    print(f"  Mean WER         : {results['mean_wer']:.4f} ({results['mean_wer']*100:.2f}%)")
-    print(f"  Exact matches    : {results['exact_matches']} / {results['total_images']}")
-    print(f"  Exact match rate : {results['exact_rate']:.4f} ({results['exact_rate']*100:.2f}%)")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("EVALUATION RESULTS" + (" (fine-tuned vs baseline)" if baseline_results else ""))
+    print("=" * 60)
+    _print_summary(results, label="Fine-tuned" if baseline_results else "Model")
+
+    if baseline_results:
+        print()
+        _print_summary(baseline_results, label="Baseline")
+        print()
+        print("-" * 60)
+        print("DELTA (fine-tuned − baseline)")
+        print("-" * 60)
+        d = results["diff"]["overall"]
+        print(f"  ΔCER            : {d['cer_delta']:+.4f}  ({d['cer_baseline']:.4f} → {d['cer_fine_tuned']:.4f})")
+        print(f"  ΔWER            : {d['wer_delta']:+.4f}  ({d['wer_baseline']:.4f} → {d['wer_fine_tuned']:.4f})")
+        print(f"  Δexact rate     : {d['exact_delta']:+.4f}  ({d['exact_baseline']:.4f} → {d['exact_fine_tuned']:.4f})")
+        print(f"  Δpasangan F1    : {d['pasangan_f1_delta']:+.4f}  ({d['pasangan_f1_baseline']:.4f} → {d['pasangan_f1_fine_tuned']:.4f})")
+        if results["diff"]["per_tier"]:
+            print("\n  Per-tier ΔCER:")
+            for tier, dt in sorted(results["diff"]["per_tier"].items()):
+                print(f"    {tier:<15}  {dt['cer_delta']:+.4f}  ({dt['cer_baseline']:.4f} → {dt['cer_fine_tuned']:.4f})")
+
+    # Per-tier breakdown
+    if results.get("per_tier") and len(results["per_tier"]) > 1:
+        print("\n" + "-" * 60)
+        print("PER-TIER BREAKDOWN")
+        print("-" * 60)
+        for tier in sorted(results["per_tier"]):
+            t = results["per_tier"][tier]
+            print(f"  {tier:<15}  n={t['total_images']:>3}  "
+                  f"CER={t['mean_cer']:.4f}  WER={t['mean_wer']:.4f}  "
+                  f"exact={t['exact_rate']:.4f}  pasangan-F1={t['pasangan']['f1']:.4f}")
 
     # Print worst-performing images
     if not args.gt_only and args.top_k > 0:
         worst = sorted(results["per_image"], key=lambda x: x["cer"], reverse=True)[:args.top_k]
         print(f"\nTop {args.top_k} worst CER images:")
         for item in worst:
-            print(f"  {item['image']}  CER={item['cer']:.4f}  WER={item['wer']:.4f}")
+            print(f"  {item['image']}  CER={item['cer']:.4f}  WER={item['wer']:.4f}  "
+                  f"tier={item.get('script_type', '?')}")
             print(f"    REF: {item['reference'][:60]}")
             print(f"    HYP: {item['hypothesis'][:60]}")
 

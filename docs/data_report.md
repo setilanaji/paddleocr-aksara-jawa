@@ -185,37 +185,75 @@ Three severity levels simulate real-world image capture conditions:
 
 ## 6. Dataset Statistics
 
-### 6.1 Training Set
+### 6.1 Training Set (three-tier composition)
+
+Training data is split into three tiers, each targeting a different
+generalization axis:
+
+| Tier | Images | Source | Purpose |
+|---|---|---|---|
+| **Pure synthetic** | 2,000 | Noto Sans Javanese (Regular + Bold), solid/aged-paper backgrounds | Core script coverage, typography variety |
+| **Semi-synthetic** | 1,000 | Same text rendering on **real blurred Dreamsea manuscript backgrounds** | Domain adaptation: teaches the model real paper texture, ink tone, bleed-through without needing transcription |
+| **Real (unannotated pool)** | 134 | Dreamsea IIIF-served Javanese manuscripts (via `scripts/dreamsea_collect.py`) | Triage + annotation source for eval set and future supplementary training |
+| **Total trainable** | **3,000** | — | Merged + shuffled into `training/ocr_vl_sft-train_aksara_jawa.jsonl` |
+
+Pure-synthetic breakdown (seed=42, `scripts/generate_aksara.py`):
+
+| Metric | Value |
+|---|---|
+| Single-line / multi-line split | 1,191 single (59.6%) / 809 multi (40.4%) |
+| Font distribution | NotoSansJavanese-Regular.ttf + NotoSansJavanese-Bold.ttf (uniform random per image) |
+| Pasangan-stress ratio | 20% (sampled from `assets/corpus_jawa_pasangan.txt`, 150 lines, avg 6 pasangan clusters/line) |
+| Augmentation distribution | 771 light / 830 medium / 399 heavy |
+
+Semi-synthetic breakdown (seed=142, `--real_bg_ratio 1.0`):
 
 | Metric | Value |
 |---|---|
 | Total images | 1,000 |
-| Single-line images | ~591 (59.1%) |
-| Multi-line images | ~409 (40.9%) |
-| Light augmentation | ~400 images |
-| Medium augmentation | ~400 images |
-| Heavy augmentation | ~200 images |
-| Random seed | 42 (reproducible) |
-| Total annotation boxes | ~2,200 |
+| Real backgrounds pool | 134 Dreamsea IIIF pages (filtered by `--script Javanese`) |
+| Background treatment | Random crop at target image size → Gaussian blur (σ=8–16) → brightness jitter (0.85–1.15) |
+| Pasangan-stress ratio | 20% (same corpus as pure-synthetic) |
+| Augmentation distribution | 403 light / 393 medium / 204 heavy |
 
 ### 6.2 Evaluation Set
 
-| Metric | Value |
-|---|---|
-| Total images | 150 |
-| Single-line images | 150 (100%) |
-| Augmentation | Light only |
-| Random seed | 42 (reproducible) |
-| Total annotation boxes | 150 |
+| Metric | Value | Notes |
+|---|---|---|
+| Total images (v1, synthetic) | 150 | Reproducible via `generate_aksara.py --eval --seed 42` |
+| Augmentation | Light only | Preserves legibility for accurate CER/WER scoring |
+| Random seed | 42 | — |
+| Target v2 (in progress) | 50–100 real images | Annotated at line level with Unicode Javanese transcription + `script_type` tag (printed/handwritten/manuscript) via Label Studio; see `docs/annotation_guide.md` |
+| Tiered split target | ~30 printed + ~30 manuscript + ~20 handwritten + ~20 signage | For per-tier CER reporting via `scripts/evaluate.py` |
 
 ### 6.3 Aksara Jawa Character Coverage
 
-| Feature | Coverage |
-|---|---|
-| Carakan (base consonants) | All 20 covered |
-| Sandhangan (vowel marks) | All major marks covered |
-| Pasangan (stacked forms) | Partial — corpus-dependent |
-| Pada (punctuation) | Basic coverage |
+| Feature | Coverage | Evidence |
+|---|---|---|
+| Carakan (base consonants) | All 20 covered | In main corpus + all 20 used as stacked second position in pasangan-stress corpus |
+| Sandhangan (vowel marks) | All major marks covered | wulu ꦶ, suku ꦸ, pepet ꦼ, taling ꦺ, taling-tarung ꦺꦴ |
+| Pasangan (stacked forms) | Dense — every pasangan-stress line contains ≥1 cluster | Avg 6.09 pasangan clusters per stress-corpus line |
+| Pada (punctuation) | pada lingsa ꧈, pada lungsi ꧉ | Present in corpus + stress-corpus |
+
+### 6.4 Real-Data Sources (Provenance)
+
+All 134 real-manuscript images used for semi-synthetic backgrounds are sourced
+from Dreamsea via the vhmml.org IIIF Image API. Provenance is tracked
+per-image in `data/real/sources.csv` with columns:
+
+```
+local_filename, source_url, manifest_url, canvas_label
+```
+
+Filter used for harvest (via `scripts/dreamsea_collect.py`):
+
+```
+--script Javanese --country Indonesia --limit 30
+```
+
+This returned 30 manifests × up to 5 pages each. Three manifests had fewer
+than 5 canvases (palm-leaf single-leaf fragments), giving 134 final pages
+(24 × 5 + 4 + 3·2 + 1·2).
 
 ---
 
@@ -274,23 +312,59 @@ The `"tag": "mask"` marks the prompt as input, `"tag": "no_mask"` marks the tran
 - All ground truth labels are programmatically verified — the generator knows exactly what text was rendered
 - Bounding boxes are computed from Pillow `textbbox()` — pixel-accurate
 - Ground truth sanity check: CER=0.00%, WER=0.00%, exact match 150/150 (verified by `evaluate.py --gt_only`)
-- Unicode normalisation applied to all corpus text before rendering
+- Unicode NFC normalisation applied to both corpus input and CER/WER comparison (both sides)
+- Empty-annotation fallback removed — images where text doesn't fit are regenerated with smaller fonts (up to 5 retries) rather than written with placeholder illegibility boxes that would poison training
 
-### 8.2 Real Data Annotation (Planned)
+### 8.2 Real Data Annotation (Live pipeline)
 
-Real manuscript images from Khastara will be annotated using PPOCRLabel:
+Real manuscript images from Dreamsea / Khastara are annotated in **Label Studio**,
+self-hosted at the team's private URL via a Cloudflare Access-gated tunnel.
+Full workflow in [`annotation_guide.md`](annotation_guide.md).
 
-1. Auto-detection of text regions
-2. Manual correction of detected boundaries
-3. Manual transcription of each region into Unicode Aksara Jawa
-4. Verification by a Javanese language reader
-5. Second-pass review before inclusion in training set
+Annotation contract (enforced by `annotation/label_studio_config.xml`):
+
+1. **One bounding box per text LINE** — not word, not character
+2. **Unicode Javanese transcription only** — no Latin transliteration allowed
+3. **Preserve pada punctuation** — pada lingsa ꧈, pada lungsi ꧉ are transcribed literally
+4. Damaged / unreadable lines get the `illegible` label and empty transcription (excluded from training automatically by `scripts/labelstudio_to_paddleocr.py`)
+5. **Script type tag** per region — `printed` / `handwritten` / `manuscript` — enables stratified evaluation via `scripts/evaluate.py` per-tier CER
+
+Pre-annotation triage:
+
+- `scripts/build_triage_page.py` generates a static HTML grid of thumbnails with keep/drop checkboxes (localStorage-backed for resume); the corresponding `scripts/apply_triage.py` deletes dropped images + cleans `sources.csv` rows
+- Removes false positives from the Dreamsea "script=Javanese" filter (occasional non-Aksara-Jawa pages)
+
+### 8.3 Inter-Annotator Agreement
+
+Two annotators independently transcribe the same 20-image sample. Pairwise CER
+between their two Unicode outputs, averaged across the sample, is the
+agreement number.
+
+Computed by `scripts/annotator_agreement.py` from two Label Studio JSON exports:
+
+```bash
+uv run python scripts/annotator_agreement.py \
+  --annotator_a annotation/export_yudha.json \
+  --annotator_b annotation/export_budi.json
+```
+
+The script reports per-image CER, mean CER across shared images, and the count
+of shared images. CER ≤ 0.05 on transcription is considered strong agreement
+for a novel script with no prior OCR dataset.
+
+### 8.4 Second-Pass Review
+
+Every annotation that ends up in the evaluation set is reviewed by a second
+reader before acceptance. Rejection reasons tracked: misread glyph,
+missed sandhangan, wrong pasangan, incorrect pada punctuation, Latin
+transliteration leaked in. Rejected items go back to the first annotator for
+correction.
 
 ---
 
 ## 9. Fine-tuning Configuration
 
-Training uses ERNIEKit on Baidu AI Studio (V100 16GB).
+Training uses ERNIEKit on RunPod (A100 40GB Community Cloud). See [runpod_setup.md](runpod_setup.md) for the full launch + install recipe.
 
 | Parameter | Value |
 |---|---|
@@ -300,17 +374,17 @@ Training uses ERNIEKit on Baidu AI Studio (V100 16GB).
 | LoRA alpha | 32 |
 | Learning rate | 2e-4 |
 | Epochs | 5 |
-| Config | `run_ocr_vl_sft_16k.yaml` |
-| Platform | Baidu AI Studio, V100 16GB |
+| Config | `training/aksara_jawa_lora_config.yaml` (version-controlled) |
+| Platform | RunPod, A100 40GB |
 
-Training command:
+Training command (config is version-controlled in the repo at `training/aksara_jawa_lora_config.yaml`):
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 \
-erniekit train examples/configs/PaddleOCR-VL/sft/run_ocr_vl_sft_16k.yaml \
-  model_name_or_path=PaddlePaddle/PaddleOCR-VL \
-  train_dataset_path=./training/ocr_vl_sft-train_aksara_jawa.jsonl
+erniekit train training/aksara_jawa_lora_config.yaml
 ```
+
+The config snapshots the exact hyperparameters, dataset paths, and model identifier used for this run. The upstream reference (`training/paddleocr-vl_lora_16k_config.yaml`) is preserved unchanged in the same directory so reviewers can diff against the project-specific adaptations.
 
 ---
 

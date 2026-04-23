@@ -1,0 +1,8 @@
+torch>=2.0.0
+transformers==4.57.1
+accelerate
+pillow>=10.0.0
+einops
+torchvision
+sentencepiece
+spaces

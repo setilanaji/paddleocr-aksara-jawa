@@ -1,0 +1,21 @@
+# IIIF Presentation API manifest URLs for Aksara Jawa manuscripts.
+# One URL per line. Lines starting with '#' are ignored.
+#
+# How to find manifest URLs for each source:
+#
+# PNRI Khastara (https://khastara.perpusnas.go.id)
+#   1. Open a manuscript's viewer page
+#   2. The IIIF manifest URL usually appears in page source or the viewer's "IIIF" menu
+#   3. It looks like: https://.../iiif/<id>/manifest.json
+#
+# Dreamsea (https://dreamsea.co)
+#   1. Open a manuscript in the Mirador viewer
+#   2. Click the info icon → copy the manifest URL (hosted at Hamburg University)
+#
+# British Library EAP (https://eap.bl.uk)
+#   1. Open the project page (e.g. EAP280 for Old Javanese palm-leaf)
+#   2. IIIF manifest links are exposed under each item's metadata panel
+#
+# Example (hypothetical — replace with real URLs):
+# https://khastara.perpusnas.go.id/iiif/manuscript-0001/manifest.json
+# https://dreamsea.rrz.uni-hamburg.de/iiif/DS0001/manifest.json

@@ -24,7 +24,7 @@ Despite its cultural significance and active institutional use, no publicly avai
 
 Base model: `PaddlePaddle/PaddleOCR-VL` (v1.0, Apache-2.0)  
 Fine-tuning method: LoRA via PaddleFormers and ERNIEKit  
-Training platform: Baidu AI Studio (V100 16GB)
+Training platform: RunPod (A100 40GB) — see [docs/runpod_setup.md](docs/runpod_setup.md)
 
 ## Use Cases
 
@@ -144,25 +144,24 @@ Available flags:
 
 ## Fine-tuning
 
-Training uses PaddleFormers on Baidu AI Studio. PaddlePaddle 3.2.1 or above is required.
+Training uses PaddleFormers + ERNIEKit on RunPod. PaddlePaddle 3.2.1 or above is required.
 
 > Use `PaddlePaddle/PaddleOCR-VL` (v1.0). Fine-tuning v1.5 is currently unsupported — see [issue #17589](https://github.com/PaddlePaddle/PaddleOCR/issues/17589).
 
-```bash
-# AI Studio notebook setup
-pip install paddlepaddle==3.2.1 \
-  -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
-pip install "paddleocr>=3.0.0"
+Full end-to-end instructions (launch the pod, install deps, transfer data, run training, push the checkpoint): [**docs/runpod_setup.md**](docs/runpod_setup.md).
 
-# LoRA fine-tuning
-erniekit train examples/configs/PaddleOCR-VL/sft/run_ocr_vl_sft_16k.yaml \
-  model_name_or_path=PaddlePaddle/PaddleOCR-VL \
-  train_dataset_path=./data/ground_truth.jsonl \
-  lora_rank=16 \
-  lora_alpha=32 \
-  learning_rate=2e-4 \
-  num_train_epochs=5
+Minimal inside-pod recipe:
+
+```bash
+pip install paddlepaddle-gpu==3.2.1 \
+  -i https://www.paddlepaddle.org.cn/packages/stable/cu124/
+pip install paddleformers "paddleocr>=3.0.0"
+
+# LoRA fine-tuning (config is version-controlled at training/aksara_jawa_lora_config.yaml)
+CUDA_VISIBLE_DEVICES=0 erniekit train training/aksara_jawa_lora_config.yaml
 ```
+
+The config snapshots the exact hyperparameters (lora_rank=16, lora_alpha=32, lr=2e-4, epochs=5) and dataset paths. The upstream reference config is preserved side-by-side at `training/paddleocr-vl_lora_16k_config.yaml` for diff.
 
 ## Evaluation
 

@@ -1,0 +1,11 @@
+# Direct image URLs for Aksara Jawa manuscripts or signage.
+# One URL per line. Lines starting with '#' are ignored.
+#
+# Use this file for:
+#   - Wikipedia Commons image pages (use the "Original file" URL)
+#   - Yogyakarta / Surakarta signage photos you've captured
+#   - Roboflow Universe image exports
+#   - Any other source that gives a direct .jpg/.png URL
+#
+# Example:
+# https://upload.wikimedia.org/wikipedia/commons/.../JavaneseManuscript.jpg

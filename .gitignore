@@ -2,6 +2,12 @@
 __pycache__/
 *.pyc
 .env
+annotation/.env
 data/
 .DS_Store
 uv.lock
+annotation/ls_data/
+annotation/cloudflared/
+*.zip
+results.json
+

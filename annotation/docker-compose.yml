@@ -1,0 +1,53 @@
+# Label Studio + Cloudflare tunnel stack for Aksara Jawa annotation.
+#
+# Run from the repository root:
+#   docker compose -f annotation/docker-compose.yml up -d
+#
+# Stop:
+#   docker compose -f annotation/docker-compose.yml down
+#
+# Logs:
+#   docker compose -f annotation/docker-compose.yml logs -f
+#
+# Configure your public hostname in annotation/.env (gitignored). Copy
+# annotation/.env.example to annotation/.env and edit. For local-only use,
+# the localhost default is fine — skip the file entirely and the tunnel
+# service will simply not connect anywhere useful.
+#
+# State directories (gitignored):
+#   annotation/ls_data/       Label Studio SQLite DB + uploaded files
+#   annotation/cloudflared/   Tunnel cert.pem, <uuid>.json credentials, config.yml
+#
+# The cloudflared service requires annotation/cloudflared/ to already be
+# populated — see docs/annotation_guide.md for the one-time login + tunnel
+# create steps.
+
+services:
+  labelstudio:
+    image: heartexlabs/label-studio:1.13.1
+    container_name: aksara-labelstudio
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./ls_data:/label-studio/data
+      - ../data:/label-studio/files/data:ro
+    environment:
+      LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED: "true"
+      LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT: /label-studio/files
+      LABEL_STUDIO_HOST: ${LABEL_STUDIO_HOST:-http://localhost:8080}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: aksara-cloudflared
+    restart: unless-stopped
+    depends_on:
+      - labelstudio
+    volumes:
+      - ./cloudflared:/home/nonroot/.cloudflared
+    command: tunnel --config /home/nonroot/.cloudflared/config.yml run
+    extra_hosts:
+      # Allow cloudflared to reach the labelstudio container via host.docker.internal
+      # (needed because config.yml points at host.docker.internal:8080).
+      - "host.docker.internal:host-gateway"
