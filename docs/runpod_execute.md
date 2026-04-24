@@ -18,7 +18,39 @@ If anything is missing, run `bash scripts/runpod_bootstrap.sh` first.
 
 ---
 
-## Step 1 — Data pipeline (tmux `data`, ~45 min)
+## Step 1 — Pull pre-built training bundle from R2 (~30 seconds)
+
+The data is **built once locally** (seed-pinned, ~700 MB) and mirrored to
+Cloudflare R2 at `aksara-jawa-images/training-bundle/`. The pod just pulls it.
+This replaces the old 45-minute on-pod regeneration and avoids repeating an
+expensive pipeline the local machine has already run.
+
+### 1a. One-time local push (run on your laptop, not the pod)
+
+```bash
+# From the repo root on your laptop
+set -a; source annotation/.env; set +a
+
+# If rclone isn't configured yet, the /annotation-r2-sync skill set it up;
+# otherwise:
+rclone config create r2 s3 provider=Cloudflare env_auth=false \
+  access_key_id="$R2_ACCESS_KEY_ID" secret_access_key="$R2_SECRET_ACCESS_KEY" \
+  region=auto endpoint="$R2_ENDPOINT" >/dev/null
+
+# Push training-ready data. Mirrors repo layout so a single rclone copy on the
+# pod lands files in the exact paths the training config expects.
+rclone copy data/synthetic      "r2:$R2_BUCKET/training-bundle/data/synthetic"      --transfers 8
+rclone copy data/semi_synthetic "r2:$R2_BUCKET/training-bundle/data/semi_synthetic" --transfers 8
+rclone copy data/eval           "r2:$R2_BUCKET/training-bundle/data/eval"           --transfers 8
+rclone copy training/ocr_vl_sft-train_aksara_jawa.jsonl "r2:$R2_BUCKET/training-bundle/training/"
+rclone copy training/ocr_vl_sft-test_aksara_jawa.jsonl  "r2:$R2_BUCKET/training-bundle/training/"
+```
+
+Re-run only the tiers that changed — `rclone copy` skips unchanged files.
+
+### 1b. Pod-side pull (tmux `data`, ~30 seconds)
+
+Copy `annotation/.env` to the pod (`/workspace/paddleocr-aksara-jawa/annotation/.env`) or paste the `R2_*` values into the pod's shell, then:
 
 ```bash
 tmux new -s data
@@ -28,12 +60,29 @@ Paste inside:
 
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
-uv run python scripts/dreamsea_collect.py \
-    --script Javanese --country Indonesia --limit 30 \
-    --output annotation/dreamsea_manifests.txt && \
-uv run python scripts/collect_manuscripts.py \
-    --manifests annotation/dreamsea_manifests.txt \
-    --output data/real/ --max_pages_per_manifest 5 --width 1200 && \
+set -a; source annotation/.env; set +a && \
+rclone config create r2 s3 provider=Cloudflare env_auth=false \
+  access_key_id="$R2_ACCESS_KEY_ID" secret_access_key="$R2_SECRET_ACCESS_KEY" \
+  region=auto endpoint="$R2_ENDPOINT" >/dev/null && \
+rclone copy "r2:$R2_BUCKET/training-bundle/" /workspace/paddleocr-aksara-jawa/ \
+  --transfers 16 --progress && \
+echo "=== DATA DONE ==="
+```
+
+**Detach:** `Ctrl+b` then `d`.
+**Reattach:** `tmux attach -t data`.
+
+Proceed to step 2 after `=== DATA DONE ===` prints.
+
+### 1c. Fallback: regenerate on the pod (only if R2 is unavailable)
+
+If R2 access is blocked or `.env` isn't on the pod, regenerate from scratch.
+This takes ~5 minutes (synthetic is fast; real-image download is skipped —
+use pre-built `data/real/` or rclone it separately). Commands match the
+current local pipeline including the eval-candidate exclusion:
+
+```bash
+cd /workspace/paddleocr-aksara-jawa && \
 uv run python scripts/generate_aksara.py \
     --count 2000 --output data/synthetic/ --seed 42 \
     --pasangan_ratio 0.2 --mode mixed --erniekit \
@@ -42,6 +91,7 @@ uv run python scripts/generate_aksara.py \
     --count 1000 --output data/semi_synthetic/ --seed 142 \
     --pasangan_ratio 0.2 --mode mixed --erniekit \
     --real_bg_dir data/real/ --real_bg_ratio 1.0 \
+    --exclude data/eval_real_candidates.txt \
     --image_dir ./data/semi_synthetic && \
 uv run python scripts/generate_aksara.py \
     --count 150 --output data/eval/ --eval --erniekit \
@@ -57,13 +107,9 @@ uv run python scripts/convert_format.py \
 echo "=== DATA DONE ==="
 ```
 
-If `data/synthetic/` already has 2000 images from a previous run, drop the
-`generate_aksara.py --count 2000 ...` line to save ~3 min.
-
-**Detach:** `Ctrl+b` then `d`.
-**Reattach:** `tmux attach -t data`.
-
-Proceed to step 2 after `=== DATA DONE ===` prints.
+The semi-synthetic regeneration requires `data/real/` (800 Leiden pages) to be
+present on the pod — either rclone them from `r2:$R2_BUCKET/training-bundle/data/real/`
+first, or do the full primary-path pull in §1b.
 
 ---
 
@@ -96,10 +142,13 @@ watch -n 5 nvidia-smi
 
 ## Step 3 — Public dataset upload (tmux `upload`, parallel with training)
 
-Uploads **only** `data/synthetic/` (pure-synthetic, fully open — Noto Sans
-Javanese SIL OFL 1.1). Explicitly excludes `data/real/` and
-`data/semi_synthetic/` because the Dreamsea source terms restrict
-redistribution (see `docs/data_report.md` §2.2).
+All current tiers are redistributable:
+
+- `data/synthetic/` + `data/semi_synthetic/` + `data/eval/` — rendered from Noto Sans Javanese ([SIL OFL 1.1](https://openfontlicense.org/), redistribution permitted)
+- `data/real/` — 800 Leiden pages under [Public Domain Mark 1.0](https://creativecommons.org/publicdomain/mark/1.0/) (replaced the previous Dreamsea pool; see `docs/data_report.md` §2.3 / §6.4 for the migration note)
+- `training/*.jsonl` — our own derived artifacts
+
+The upload is driven by `scripts/hf_push_dataset.py`, which mirrors the layout in `docs/data_report.md` §6, attaches per-subset license info in the dataset card, and skips `eval/real_v2/` when annotations don't yet exist.
 
 ```bash
 tmux new -s upload
@@ -110,10 +159,18 @@ Paste inside:
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
 huggingface-cli login --token $HF_TOKEN && \
-huggingface-cli upload setilanaji/aksara-jawa-ocr data/synthetic/ \
-    --repo-type=dataset \
-    --commit-message="v2 pure-synthetic: 2000 images, multi-font (Noto Regular+Bold), 20% pasangan-stress"
+uv run python scripts/hf_push_dataset.py --dry-run && \
+uv run python scripts/hf_push_dataset.py
 ```
+
+The dry-run prints the file counts per tier and the destination paths — use it to sanity-check before a multi-hundred-megabyte upload. To iterate just one tier (e.g. after regenerating semi-synthetic):
+
+```bash
+uv run python scripts/hf_push_dataset.py --only semi_synthetic
+uv run python scripts/hf_push_dataset.py --only readme   # re-render the dataset card without touching data
+```
+
+After annotations are exported to `data/real/ground_truth.jsonl`, rerun the full push — `eval/real_v2/` will be included automatically.
 
 ---
 
