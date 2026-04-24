@@ -1,14 +1,3 @@
-<!--
-This is the model card content for the Hugging Face repo
-`setilanaji/PaddleOCR-VL-Aksara-Jawa`. To publish it:
-
-  cd /workspace/paddleocr-aksara-jawa     # or local laptop
-  huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa \
-      docs/hf_README.md README.md \
-      --commit-message="model card v1"
-
-Don't confuse this with the repo-level README.md at the root of this codebase.
--->
 ---
 language:
 - jv
@@ -26,6 +15,18 @@ tags:
 - low-resource
 pipeline_tag: image-to-text
 ---
+
+<!--
+This is the model card content for the Hugging Face repo
+`setilanaji/PaddleOCR-VL-Aksara-Jawa`. To publish it:
+
+  huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa \
+      docs/hf_README.md README.md \
+      --commit-message="model card v1"
+
+Don't confuse this with the repo-level README.md at the root of this codebase.
+-->
+
 
 # PaddleOCR-VL fine-tuned for Aksara Jawa (Javanese script) — v1
 
