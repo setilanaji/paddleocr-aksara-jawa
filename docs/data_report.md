@@ -59,6 +59,43 @@ Synthetic images were generated using `scripts/generate_aksara.py`, a custom pip
 **License:** Research purposes only  
 **Redistribution:** Not permitted — kept in private training folder only
 
+### 2.3 Real Manuscript Data (Supplementary — Public Domain, Redistributable)
+
+**Source:** Leiden University Libraries — Digital Collections  
+**URL:** https://digitalcollections.universiteitleiden.nl  
+**License:** Public Domain Mark 1.0 (declared in each manifest's `attribution` field); "Citing the Leiden University Libraries as a source is appreciated"  
+**Redistribution:** Permitted — images may be included in the public dataset release  
+**Access:** IIIF Presentation API v2. The manifest host is behind an F5 bot-wall, so manifests are fetched once via a headful browser and cached locally under `annotation/leiden_*.json`; the image host (`iiif.universiteitleiden.nl`) is unwalled and the cached manifests drive `scripts/collect_manuscripts.py --manifest-files …`.
+
+Shared fetch conventions (all items): fetched at **2585-wide** (~4.8 MP each, ~800 KB JPEG). This sits one pyramid tier below the Or. 1871 native of 5169 px and matches the Or. 1928 native of 2590 px, so sandhangan vowel diacritics resolve at 15–20 px across both manuscripts — rather than 5–10 px at 1200-wide where they can be confused or skipped by the OCR head.
+
+| Shelfmark | Title | Handle | Canvases | Harvested | Front-matter skip |
+|---|---|---|---|---|---|
+| Or. 1871 | *Panji Jaya Lengkara and Angreni romance in verse* (parts a/b/c — items 1987922, 1988526, 1989001 under parent 1990266) | `http://hdl.handle.net/1887.1/item:1990266` | 223 + 223 + 215 = 661 | 640 pages (all content, 578 MB) | 7 per part: `band1-4` + `opening01-03` |
+| Or. 1928 | *Kitab pangeran Bonang* (item 1576531) | `http://hdl.handle.net/1887.1/item:1576531` | 51 | 42 pages (content only, ~33 MB) | 6: `band1-4` + `opening1-2` (index 6 `opening3 (incl. p001)` is content, so kept); capped at 42 to drop back-matter `opening4-6` |
+| D Or. 15 | *Babad Paku Alaman* — Pakualaman court chronicle, illuminated manuscript (item 2034468) | `http://hdl.handle.net/1887.1/item:2034468` | 123 | 118 pages (~82 MB) | 4: front cover + marbled endpaper + two European ownership flyleaves; capped at 118 to drop the back cover (c122). Labels are plain `00001…00123` with no `band`/`opening` markers, so boundary was determined by eyeballing probe thumbnails. First 7 content canvases are elaborate illuminated openings (*pepadan*); main text body starts around c011 |
+
+Commands:
+
+```bash
+# Or. 1871
+scripts/collect_manuscripts.py \
+  --manifest-files annotation/leiden_or1871_{a,b,c}.json \
+  --skip-canvases-per-manifest 7 --width 2585 --output data/real/
+
+# Or. 1928
+scripts/collect_manuscripts.py \
+  --manifest-files annotation/leiden_or1928.json \
+  --skip-canvases-per-manifest 6 --max_pages_per_manifest 42 \
+  --width 2585 --output data/real/
+
+# D Or. 15
+scripts/collect_manuscripts.py \
+  --manifest-files annotation/leiden_dor15.json \
+  --skip-canvases-per-manifest 4 --max_pages_per_manifest 118 \
+  --width 2585 --output data/real/
+```
+
 ---
 
 ## 3. Text Corpus Construction
@@ -193,8 +230,8 @@ generalization axis:
 | Tier | Images | Source | Purpose |
 |---|---|---|---|
 | **Pure synthetic** | 2,000 | Noto Sans Javanese (Regular + Bold), solid/aged-paper backgrounds | Core script coverage, typography variety |
-| **Semi-synthetic** | 1,000 | Same text rendering on **real blurred Dreamsea manuscript backgrounds** | Domain adaptation: teaches the model real paper texture, ink tone, bleed-through without needing transcription |
-| **Real (unannotated pool)** | 134 | Dreamsea IIIF-served Javanese manuscripts (via `scripts/dreamsea_collect.py`) | Triage + annotation source for eval set and future supplementary training |
+| **Semi-synthetic** | 1,000 | Same text rendering on **real blurred Leiden manuscript backgrounds** (Or. 1871 + Or. 1928 + D Or. 15, Public Domain Mark 1.0) | Domain adaptation: teaches the model real paper texture, ink tone, bleed-through without needing transcription |
+| **Real (unannotated pool)** | 800 | Leiden UL IIIF pages (see §6.4) | Semi-synthetic background pool + triage/annotation source for eval set and future supplementary training |
 | **Total trainable** | **3,000** | — | Merged + shuffled into `training/ocr_vl_sft-train_aksara_jawa.jsonl` |
 
 Pure-synthetic breakdown (seed=42, `scripts/generate_aksara.py`):
@@ -211,7 +248,7 @@ Semi-synthetic breakdown (seed=142, `--real_bg_ratio 1.0`):
 | Metric | Value |
 |---|---|
 | Total images | 1,000 |
-| Real backgrounds pool | 134 Dreamsea IIIF pages (filtered by `--script Javanese`) |
+| Real backgrounds pool | 800 Leiden IIIF pages (Or. 1871 + Or. 1928 + D Or. 15, Public Domain Mark 1.0) |
 | Background treatment | Random crop at target image size → Gaussian blur (σ=8–16) → brightness jitter (0.85–1.15) |
 | Pasangan-stress ratio | 20% (same corpus as pure-synthetic) |
 | Augmentation distribution | 403 light / 393 medium / 204 heavy |
@@ -237,23 +274,30 @@ Semi-synthetic breakdown (seed=142, `--real_bg_ratio 1.0`):
 
 ### 6.4 Real-Data Sources (Provenance)
 
-All 134 real-manuscript images used for semi-synthetic backgrounds are sourced
-from Dreamsea via the vhmml.org IIIF Image API. Provenance is tracked
-per-image in `data/real/sources.csv` with columns:
+Real-manuscript images live in `data/real/` with provenance tracked
+per-image in `data/real/sources.csv`:
 
 ```
 local_filename, source_url, manifest_url, canvas_label
 ```
 
-Filter used for harvest (via `scripts/dreamsea_collect.py`):
+Current pool (800 pages, all public domain and redistributable):
 
-```
---script Javanese --country Indonesia --limit 30
-```
+| Source | Pages | Role | Redistributable |
+|---|---|---|---|
+| Leiden UL (Or. 1871 — *Panji romance*, European paper) | 640 | Semi-synthetic backgrounds + annotation targets (eval + supplementary training) | **Yes — Public Domain Mark 1.0** |
+| Leiden UL (Or. 1928 — *Kitab pangeran Bonang*, tree-bark / dluwang paper) | 42 | Semi-synthetic backgrounds + annotation targets, older script style (~16th c. Islamic-Javanese) | **Yes — Public Domain Mark 1.0** |
+| Leiden UL (D Or. 15 — *Babad Paku Alaman*, illuminated court manuscript) | 118 | Semi-synthetic backgrounds + annotation targets, ornate court style + dense plain pages | **Yes — Public Domain Mark 1.0** |
 
-This returned 30 manifests × up to 5 pages each. Three manifests had fewer
-than 5 canvases (palm-leaf single-leaf fragments), giving 134 final pages
-(24 × 5 + 4 + 3·2 + 1·2).
+The earlier 134-page Dreamsea (vhmml.org IIIF) pool used in the first semi-synthetic run was dropped once Leiden's public-domain Or. 1871 harvest came online — see `scripts/dreamsea_collect.py` for the historical collector, kept in-tree for reproducibility of the v0 dataset snapshot.
+
+**Leiden harvest** (see §2.3 for full command table):
+
+- **Or. 1871** (3 pre-fetched manifests): `--skip-canvases-per-manifest 7 --width 2585` → 216 + 216 + 208 = 640 content pages at 2585×~2050 px, 578 MB. The 7 skipped canvases per part are `band1-4` (binding) and `opening01-03` (flyleaves) preceding the first content canvas `p001-002`.
+- **Or. 1928** (1 pre-fetched manifest): `--skip-canvases-per-manifest 6 --max_pages_per_manifest 42 --width 2585` → 42 content pages at 2585×~1800 px (different aspect — smaller native: 2590×3563), 33 MB. Skip is 6 not 7 because `opening3 (incl. p001)` at index 6 is content; cap at 42 drops the 3 back-matter `opening4-6` canvases.
+- **D Or. 15** (1 pre-fetched manifest): `--skip-canvases-per-manifest 4 --max_pages_per_manifest 118 --width 2585` → 118 pages at 2585×~1900 px, 82 MB. Labels are plain sequential (`00001…00123`) with no content markers, so skip=4 was set by visually inspecting probe thumbnails: c000 front cover, c001 marbled endpaper, c002/c003 European ownership flyleaves, **c004 first illuminated Aksara opening**. Cap 118 drops c122 back cover.
+
+Each Leiden page is a two-page manuscript spread; downstream line-level annotation handles recto/verso separation via `annotation/label_studio_config.xml`.
 
 ---
 
@@ -322,7 +366,7 @@ inserted; the assistant turn is the prediction target.
 
 ### 8.2 Real Data Annotation (Live pipeline)
 
-Real manuscript images from Dreamsea / Khastara are annotated in **Label Studio**,
+Real manuscript images from Leiden (and future Khastara / EAP) are annotated in **Label Studio**,
 self-hosted at the team's private URL via a Cloudflare Access-gated tunnel.
 Full workflow in [`annotation_guide.md`](annotation_guide.md).
 
@@ -337,7 +381,7 @@ Annotation contract (enforced by `annotation/label_studio_config.xml`):
 Pre-annotation triage:
 
 - `scripts/build_triage_page.py` generates a static HTML grid of thumbnails with keep/drop checkboxes (localStorage-backed for resume); the corresponding `scripts/apply_triage.py` deletes dropped images + cleans `sources.csv` rows
-- Removes false positives from the Dreamsea "script=Javanese" filter (occasional non-Aksara-Jawa pages)
+- Removes false positives (e.g. non-text flyleaves slipping past the `--skip-canvases-per-manifest` heuristic, or foreign-script pages in mixed manuscripts)
 
 ### 8.3 Inter-Annotator Agreement
 
@@ -403,7 +447,7 @@ The config snapshots the exact hyperparameters, dataset paths, and model identif
 
 4. **No handwriting** — Current dataset contains only printed/typeset Aksara Jawa. Handwritten manuscript recognition requires separate data.
 
-5. **Synthetic-only public set** — Real manuscript images are used for training but cannot be redistributed. The public dataset is synthetic only.
+5. **Mixed-redistributability real set (pipeline-level)** — The current real pool is 100% Leiden (§2.3, Public Domain Mark 1.0) and can ship with the public dataset release. Future integration of PNRI Khastara and British Library EAP pages (§2.2) would add research-use-only material that must stay in private training folders; those sources are wired in collectors but not currently in the pool.
 
 ---
 

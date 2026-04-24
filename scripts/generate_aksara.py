@@ -98,15 +98,44 @@ def load_font(path: Path, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(str(path), size)
 
 
-def discover_real_backgrounds(real_bg_dir: Path | None) -> list[Path]:
-    """Collect candidate real-manuscript images for semi-synthetic backgrounds."""
+def load_exclude_set(exclude_file: Path | None) -> set[str]:
+    """Read a list of filenames (one per line, # comments + blank lines ignored)
+    and return their basenames. Tolerant to full paths — only the filename matters."""
+    if exclude_file is None:
+        return set()
+    if not exclude_file.exists():
+        print(f"  WARNING: --exclude {exclude_file} not found, no images excluded")
+        return set()
+    names: set[str] = set()
+    for line in exclude_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        names.add(Path(line).name)
+    return names
+
+
+def discover_real_backgrounds(
+    real_bg_dir: Path | None,
+    exclude: set[str] | None = None,
+) -> list[Path]:
+    """Collect candidate real-manuscript images for semi-synthetic backgrounds.
+    Filenames in `exclude` are dropped from the pool — use this to hold back
+    eval-candidate images so training never sees them (even blurred)."""
     if real_bg_dir is None:
         return []
     if not real_bg_dir.exists():
         print(f"  WARNING: --real_bg_dir {real_bg_dir} not found, skipping semi-synthetic mode")
         return []
-    return sorted(real_bg_dir.glob("*.jpg")) + sorted(real_bg_dir.glob("*.jpeg")) \
-         + sorted(real_bg_dir.glob("*.png"))
+    all_bg = sorted(real_bg_dir.glob("*.jpg")) + sorted(real_bg_dir.glob("*.jpeg")) \
+           + sorted(real_bg_dir.glob("*.png"))
+    if exclude:
+        kept = [p for p in all_bg if p.name not in exclude]
+        dropped = len(all_bg) - len(kept)
+        if dropped:
+            print(f"  Excluded {dropped} images from background pool (via --exclude)")
+        return kept
+    return all_bg
 
 
 def build_background(
@@ -348,6 +377,7 @@ def generate(
     pasangan_ratio: float = 0.0,
     real_bg_dir:    Path | None = None,
     real_bg_ratio:  float = 0.0,
+    exclude_file:   Path | None = None,
 ):
     if seed is not None:
         random.seed(seed)
@@ -370,7 +400,8 @@ def generate(
 
     real_backgrounds: list[Path] = []
     if real_bg_ratio > 0:
-        real_backgrounds = discover_real_backgrounds(real_bg_dir)
+        exclude = load_exclude_set(exclude_file)
+        real_backgrounds = discover_real_backgrounds(real_bg_dir, exclude=exclude)
         if real_backgrounds:
             print(f"Real-background pool: {len(real_backgrounds)} images from {real_bg_dir} "
                   f"(ratio {real_bg_ratio:.0%})")
@@ -524,6 +555,10 @@ if __name__ == "__main__":
                          "(e.g. data/real/). Blurred + cropped to patches, text rendered on top")
     ap.add_argument("--real_bg_ratio",  type=float, default=0.0,
                     help="Fraction of images that use a real-background patch instead of solid colour")
+    ap.add_argument("--exclude",        type=Path, default=None,
+                    help="Path to a text file listing filenames to exclude from --real_bg_dir "
+                         "(one name per line, # comments OK). Use to hold back eval-candidate "
+                         "images from the semi-synthetic background pool. See scripts/pick_eval_candidates.py")
     ap.add_argument("--eval",           action="store_true",
                     help="Eval preset: seed=42, light augmentation, single-line only, no pasangan stress")
     ap.add_argument("--preview",        action="store_true")
@@ -548,4 +583,5 @@ if __name__ == "__main__":
                  preview=args.preview,
                  pasangan_ratio=args.pasangan_ratio,
                  real_bg_dir=args.real_bg_dir,
-                 real_bg_ratio=args.real_bg_ratio)
+                 real_bg_ratio=args.real_bg_ratio,
+                 exclude_file=args.exclude)
