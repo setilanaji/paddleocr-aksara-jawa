@@ -69,7 +69,7 @@ Click **Deploy**. Wait ~1 minute for "Running" state.
 
 ## 2. SSH into the pod
 
-RunPod dashboard → your pod → **Connect** → copy the SSH command. Looks like:
+RunPod dashboard → your pod → **Connect** → copy the SSH command. Looks like (use your ssh key location):
 
 ```bash
 ssh root@ssh.runpod.io -p 12345 -i ~/.ssh/id_ed25519
@@ -106,21 +106,30 @@ The data is pre-built on your laptop and mirrored to R2. The pod just pulls it.
 Open a named tmux session so the pull doesn't die if your SSH disconnects:
 
 ```bash
+apt-get update && apt-get install -y tmux           
 tmux new -s data
 ```
 
-Inside that tmux, paste the following **after replacing the `...` with your R2 values**:
+Inside that tmux, paste the following **after replacing the `...` with your R2 values**. Each `export` is on its own line on purpose — a single `export A=x B=${A}` expands `${A}` *before* it's assigned and silently leaves `B=` empty, which shows up later as `https://.r2.cloudflarestorage.com: no such host`.
 
 ```bash
-cd /workspace/paddleocr-aksara-jawa && \
-export R2_ACCOUNT_ID=... \
-       R2_ACCESS_KEY_ID=... \
-       R2_SECRET_ACCESS_KEY=... \
-       R2_BUCKET=aksara-jawa-images \
-       R2_ENDPOINT=https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com && \
-rclone config create r2 s3 provider=Cloudflare env_auth=false \
+cd /workspace/paddleocr-aksara-jawa
+export R2_ACCOUNT_ID=...
+export R2_ACCESS_KEY_ID=...
+export R2_SECRET_ACCESS_KEY=...
+export R2_BUCKET=aksara-jawa-images
+export R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+# Sanity check — must show your account ID, not an empty host.
+echo "endpoint is: $R2_ENDPOINT"
+
+# provider=Other, not Cloudflare — pod rclone is often old enough that
+# `provider=Cloudflare` fails with `s3 provider "Cloudflare" not known`.
+# Upgrade path if you want the nicer value: curl https://rclone.org/install.sh | bash
+rclone config create r2 s3 provider=Other env_auth=false \
   access_key_id="$R2_ACCESS_KEY_ID" secret_access_key="$R2_SECRET_ACCESS_KEY" \
-  region=auto endpoint="$R2_ENDPOINT" >/dev/null && \
+  region=auto endpoint="$R2_ENDPOINT" >/dev/null
+
 rclone copy "r2:$R2_BUCKET/training-bundle/" /workspace/paddleocr-aksara-jawa/ \
   --transfers 16 --progress --s3-no-check-bucket && \
 echo "=== DATA DONE ==="
@@ -128,11 +137,62 @@ echo "=== DATA DONE ==="
 
 **Expected output:** a progress bar showing ~50 MB transferred, finishing with `=== DATA DONE ===`.
 
-Detach from tmux: `Ctrl+b` then `d`. You can reattach anytime with `tmux attach -t data`.
+If it looks done but hangs on the last file (e.g. `3161 / 3162, 100%` with a file stuck at 0 B/s for more than a minute), that's a transient Cloudflare hiccup on one object. `Ctrl+C` and re-run the same `rclone copy` — it's idempotent, skips the files already present, and finishes the last one in seconds. If it hangs again on the same file, retry with tighter timeouts:
+
+```bash
+rclone copy "r2:$R2_BUCKET/training-bundle/" /workspace/paddleocr-aksara-jawa/ \
+  --transfers 4 --contimeout 30s --timeout 60s --progress --s3-no-check-bucket && \
+echo "=== DATA DONE ==="
+```
+
+Sanity-check what landed before moving on:
+
+```bash
+wc -l training/ocr_vl_sft-train_aksara_jawa.jsonl   # expect 3000
+ls data/synthetic/ | wc -l                          # expect ~2000
+ls data/eval/ | wc -l                               # expect ~150
+```
+
+Detach from tmux: `tmux detach` or `Ctrl+b` then `d`. You can reattach anytime with `tmux attach -t data`.
 
 ---
 
 ## 5. Start training (~2–3 hours)
+
+### 5a. One-time pod prep (~30 s)
+
+Two fixes the R2 bundle alone doesn't cover:
+
+1. **Image path resolution.** paddleformers resolves `images:` relative to the jsonl's directory (`training/`), but image paths inside are like `data/synthetic/aksara_0001.jpg`. Without this, every record errors with `is not a valid url or file path` and every example is skipped. Symlink `training/data → ../data` so the paths resolve:
+
+   ```bash
+   cd /workspace/paddleocr-aksara-jawa
+   ln -sfn /workspace/paddleocr-aksara-jawa/data training/data
+   ls -la training/data/synthetic/aksara_0001.jpg   # must resolve to a real file
+   ```
+
+2. **JSONL schema.** If the bundle on R2 was pushed before commit `7a8d997` ("emit paddleformers messages+images schema"), the jsonl uses the old `image_info`/`text_info` keys and training fails with `preprocess data error: 'messages'` on every record. Check and regenerate if needed:
+
+   ```bash
+   head -1 training/ocr_vl_sft-train_aksara_jawa.jsonl | \
+     python3 -c "import json,sys; print(list(json.loads(sys.stdin.read()).keys()))"
+   # Expected: ['messages', 'images']
+   # If you see ['image_info', 'text_info'], regenerate from source:
+   uv run python scripts/convert_format.py \
+       --input data/synthetic/ground_truth.jsonl data/semi_synthetic/ground_truth.jsonl \
+       --image_dir data/synthetic/ data/semi_synthetic/ \
+       --output training/ocr_vl_sft-train_aksara_jawa.jsonl --shuffle
+   uv run python scripts/convert_format.py \
+       --input data/eval/ground_truth.jsonl \
+       --image_dir data/eval/ \
+       --output training/ocr_vl_sft-test_aksara_jawa.jsonl
+   ```
+
+   Re-run the `head -1 | python3 -c ...` check — now it must print `['messages', 'images']`.
+
+   After confirming, re-push the fixed bundle to R2 so the next pod doesn't repeat this.
+
+### 5b. Launch training
 
 New tmux session:
 
@@ -148,11 +208,13 @@ CUDA_VISIBLE_DEVICES=0 paddleformers-cli train \
     training/aksara_jawa_lora_config.yaml 2>&1 | tee /workspace/train.log
 ```
 
+**Watch the first ~30 s:** there should be no `preprocess data error: 'messages'` warnings and no `is not a valid url or file path` errors. If you see either, stop (`Ctrl+C`) and redo 5a — launching a full run with a broken dataset burns A100 hours on zero signal.
+
 **What happens:**
 
 - First ~2 minutes: downloads base `PaddlePaddle/PaddleOCR-VL` weights (~2 GB from HF)
 - After that: training logs print every step. You'll see `loss`, `learning_rate`, and progress through 5 epochs
-- Loss should decrease steadily — expect ~4.5 at epoch 0, ~0.3 at epoch 5 for a healthy run
+- Loss for LoRA on PaddleOCR-VL starts **already low** (~0.1–0.3, not the 4+ you'd see in LLM full-param training) because the base VL model already handles images well — only the ~1.6% LoRA params adapt to Aksara Jawa. Expect final loss in the **0.02–0.08** range. If you see loss values > 1 at epoch 0.3+, something is wrong with the data pipeline (re-check §5a). If you see `ppl` (perplexity) stuck at ~1.0 with loss near 0, that can mean labels are all masked — verify at §7 eval that the model actually emits Aksara Jawa.
 
 Detach with `Ctrl+b d`. Monitor from any shell without re-entering tmux:
 
@@ -222,6 +284,64 @@ RunPod dashboard → your pod → **Stop**.
 Your R2 token is object-scoped (good). Make sure every rclone command in §4
 includes `--s3-no-check-bucket`. It tells rclone to skip the bucket-creation
 preflight that your token can't perform.
+
+### `s3 provider "Cloudflare" not known`
+Pod rclone is older than the release that added the `Cloudflare` provider
+string. Use `provider=Other` (as §4 does now), or upgrade rclone with
+`curl https://rclone.org/install.sh | bash`.
+
+### `dial tcp: lookup .r2.cloudflarestorage.com: no such host`
+The endpoint URL has no account ID — note the leading dot. This happens when
+you chain all `export`s on one command (`export A=x B=${A}`); `${A}` is
+expanded before it's assigned, so `R2_ENDPOINT` ends up as
+`https://.r2.cloudflarestorage.com`. Split each `export` onto its own line
+and re-run. `echo "endpoint is: $R2_ENDPOINT"` should show the account ID.
+
+### `tmux: command not found`
+Not every RunPod template has tmux preinstalled. The first block in §4
+installs it with `apt-get`. If you skipped that, run it now.
+
+### rclone copy hangs at 100% on the last file
+Byte total reads `50.379 MiB / 50.379 MiB` and file count is `3161 / 3162`,
+but one small object sits at 0 B/s for more than a minute. Transient R2
+hiccup on a single key. `Ctrl+C` and re-run — `rclone copy` skips what's
+already on disk. If it hangs on the same file twice in a row, add
+`--transfers 4 --contimeout 30s --timeout 60s` so the client gives up and
+retries that key instead of waiting forever.
+
+If `Ctrl+C` has no effect (web terminals sometimes swallow it) and `kill -9 <pid>`
+doesn't either, check process state: `ps -p <pid> -o stat,cmd`. `Z`/`Zl`
+(zombie) means the process is already dead — drop the session with
+`tmux kill-session -t data` and the kernel reaps it. `D`/`Dl` (uninterruptible
+sleep) means it's blocked in a syscall the kernel can't interrupt — only the
+pod restart will clear it.
+
+### Training: `Error: ... is not a valid url or file path`
+Every record is skipped because paddleformers resolves image paths relative
+to the jsonl's directory (`training/`), but the paths inside are
+`data/synthetic/...`. Symlink so they resolve:
+```bash
+ln -sfn /workspace/paddleocr-aksara-jawa/data training/data
+```
+
+### Training: `preprocess data error: 'messages'`
+Dataset is in the old `image_info`/`text_info` schema; the current config
+wants the `messages`/`images` schema (commit `7a8d997`). Regenerate on the
+pod from `data/*/ground_truth.jsonl` — see §5a step 2.
+
+### Training crashes at first eval step with `NameError: name 'GPTModel' is not defined`
+Upstream bug in `paddleformers/trainer/trainer.py:4460` — the VL-LoRA branch
+of `evaluation_loop` references `GPTModel` without importing it, so the very
+first periodic eval (step 200 by default) crashes the run. Loss before the
+crash is real, the LoRA adapters are valid up to the last `save_steps`
+checkpoint. Fix in `training/aksara_jawa_lora_config.yaml`:
+```yaml
+do_eval: false
+evaluation_strategy: "no"
+```
+`save_strategy: steps` still snapshots the model — you'll have a checkpoint
+to resume from. Real evaluation runs once at §7 via `scripts/evaluate.py`,
+which doesn't go through the broken trainer path.
 
 ### "CUDA out of memory"
 You landed on a smaller GPU than A100 40GB. Either:

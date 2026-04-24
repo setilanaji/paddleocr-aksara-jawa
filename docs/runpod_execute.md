@@ -61,13 +61,15 @@ Paste inside:
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
 set -a; source annotation/.env; set +a && \
-rclone config create r2 s3 provider=Cloudflare env_auth=false \
+rclone config create r2 s3 provider=Other env_auth=false \
   access_key_id="$R2_ACCESS_KEY_ID" secret_access_key="$R2_SECRET_ACCESS_KEY" \
   region=auto endpoint="$R2_ENDPOINT" >/dev/null && \
 rclone copy "r2:$R2_BUCKET/training-bundle/" /workspace/paddleocr-aksara-jawa/ \
   --transfers 16 --progress --s3-no-check-bucket && \
 echo "=== DATA DONE ==="
 ```
+
+> `provider=Other` — pod rclone is often old enough that `Cloudflare` isn't a recognised provider. `Other` works on every version. Laptop-side (§1a) keeps `Cloudflare` since local rclone is typically current.
 
 **Detach:** `Ctrl+b` then `d`.
 **Reattach:** `tmux attach -t data`.

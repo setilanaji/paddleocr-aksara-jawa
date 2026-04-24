@@ -19,6 +19,9 @@ train_dataset_type: messages
 eval_dataset_type: messages
 train_dataset_path: ./training/ocr_vl_sft-train_aksara_jawa.jsonl
 train_dataset_prob: "1.0"
+# eval_dataset_* kept for reference but mid-training eval is disabled below
+# (paddleformers trainer.py:4460 has a NameError on `GPTModel` for VL-LoRA).
+# Standalone eval after training runs via scripts/evaluate.py.
 eval_dataset_path: ./training/ocr_vl_sft-test_aksara_jawa.jsonl
 eval_dataset_prob: "1.0"
 max_seq_len: 16384
@@ -42,14 +45,14 @@ stage: VL-SFT
 fine_tuning: lora
 seed: 42
 do_train: true
-do_eval: true
+do_eval: false                # paddleformers VL-LoRA eval path is broken (NameError: GPTModel)
 per_device_eval_batch_size: 8
 per_device_train_batch_size: 8
 num_train_epochs: 5
 max_steps: -1
 max_estimate_samples: 500
 eval_steps: 200
-evaluation_strategy: steps
+evaluation_strategy: "no"     # disable mid-training eval; use scripts/evaluate.py post-training
 save_steps: 200
 save_strategy: steps
 logging_steps: 1
