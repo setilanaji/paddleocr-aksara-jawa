@@ -1,0 +1,17 @@
+# Merge LoRA adapter into the base PaddleOCR-VL model and write a complete
+# standalone checkpoint that can be loaded by transformers + custom .py files.
+#
+# Run with:
+#   paddleformers-cli export training/aksara_jawa_lora_export.yaml
+#
+# Output lands at <output_dir>/export/ — that subdirectory is what gets
+# uploaded to Hugging Face for inference, not the raw adapter dir.
+#
+# Reference:
+#   https://github.com/PaddlePaddle/PaddleFormers/blob/develop/examples/best_practices/PaddleOCR-VL/paddleocr-vl_lora_export.yaml
+
+### model
+fine_tuning: LoRA
+model_name_or_path: PaddlePaddle/PaddleOCR-VL
+output_dir: ./PaddleOCR-VL-Aksara-Jawa-lora
+copy_custom_file_list: "configuration_paddleocr_vl.py image_processing_paddleocr_vl.py modeling_paddleocr_vl.py processing_paddleocr_vl.py inference.yml"

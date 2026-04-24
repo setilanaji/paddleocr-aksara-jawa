@@ -234,19 +234,44 @@ watch -n 5 nvidia-smi
 
 ---
 
-## 6. Upload the fine-tuned model to Hugging Face
+## 5c. Merge the LoRA adapter into a standalone model (~3 min)
 
-Once training finishes (`tmux attach -t train` — you'll see `=== TRAINING DONE ===` or similar), push the checkpoint:
+`paddleformers-cli train` writes only the **adapter** (`peft_model-*.safetensors` + `lora_config.json`). Loading that directly with `transformers.AutoModelForCausalLM.from_pretrained` fails — transformers expects a complete model with custom `.py` modeling files. The upstream solution is `paddleformers-cli export`, which merges adapter + base into a complete checkpoint.
+
+```bash
+cd /workspace/paddleocr-aksara-jawa
+paddleformers-cli export training/aksara_jawa_lora_export.yaml
+```
+
+**What happens:**
+- Loads base `PaddlePaddle/PaddleOCR-VL` (~2 GB, cached from training)
+- Applies the LoRA adapter on top
+- Writes the merged complete model to `./PaddleOCR-VL-Aksara-Jawa-lora/export/`
+- Copies the custom `.py` files (`configuration_paddleocr_vl.py`, `modeling_paddleocr_vl.py`, etc.) into the export dir
+
+**Verify:**
+
+```bash
+ls PaddleOCR-VL-Aksara-Jawa-lora/export/ | head
+```
+
+**Expect** a complete model directory: `config.json`, `*.safetensors` (multiple shards, ~2 GB total), the four `*_paddleocr_vl.py` files, `inference.yml`, tokenizer files. **This is the dir you upload to HF, not the parent.**
+
+---
+
+## 6. Upload the merged model to Hugging Face
+
+Once you've run §5c and `export/` exists, push that subdir:
 
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
-huggingface-cli login --token $HF_TOKEN && \
+huggingface-cli login --token "$HF_TOKEN" && \
 huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa \
-    PaddleOCR-VL-Aksara-Jawa-lora/ \
-    --commit-message="LoRA v1: rank=16 alpha=32 lr=2e-4 epochs=5 seed=42"
+    PaddleOCR-VL-Aksara-Jawa-lora/export/ \
+    --commit-message="LoRA v1 merged: rank=16 alpha=32 lr=2e-4 epochs=5 seed=42"
 ```
 
-**Expected output:** a commit SHA and a link to `https://huggingface.co/setilanaji/PaddleOCR-VL-Aksara-Jawa/tree/main`. Open the link in a browser to confirm the files landed.
+**Expected output:** per-file progress bars (the model shards are the bulk, ~2 GB total), ending with a commit SHA + a link to `https://huggingface.co/setilanaji/PaddleOCR-VL-Aksara-Jawa/tree/main`. Open it to confirm the `.py` files landed alongside the safetensors.
 
 ---
 
@@ -330,6 +355,13 @@ ln -sfn /workspace/paddleocr-aksara-jawa/data training/data
 Dataset is in the old `image_info`/`text_info` schema; the current config
 wants the `messages`/`images` schema (commit `7a8d997`). Regenerate on the
 pod from `data/*/ground_truth.jsonl` — see §5a step 2.
+
+### Evaluation: `does not appear to have a file named configuration_paddleocr_vl.py`
+You uploaded the raw LoRA adapter directory instead of the merged model.
+`paddleformers-cli train` writes only `peft_model-*.safetensors` + `lora_config.json`,
+which `transformers.AutoModelForCausalLM.from_pretrained` cannot load on its own.
+Run `paddleformers-cli export` first (see §5c) and upload `<output_dir>/export/`,
+not `<output_dir>/`.
 
 ### Evaluation: `cannot import name 'cached_assets_path' from 'huggingface_hub'`
 `paddleocr` still calls `cached_assets_path`, which `huggingface_hub` removed
