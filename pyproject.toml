@@ -13,7 +13,7 @@ dependencies = [
     "opencv-python-headless>=4.8.0",
     "numpy>=2.0.0",
     "faker>=20.0.0",
-    "huggingface-hub>=1.0.0",
+    "huggingface-hub>=0.20,<1.0",   # paddleocr requires <1.0 (still uses cached_assets_path)
     "jiwer>=3.0.0",
     "rapidfuzz>=3.0.0",
     "pandas>=2.0.0",
@@ -36,9 +36,8 @@ eval = [
     "einops>=0.7.0",
     "torchvision>=0.19.0",
     "sentencepiece>=0.2.0",
-    # paddleocr still imports `cached_assets_path` which was removed in
-    # huggingface_hub 1.0. Pin below 1.0 until paddleocr migrates.
-    "huggingface_hub>=0.20,<1.0",
+    # huggingface_hub pinned at top-level (paddleocr needs <1.0). No need
+    # to repeat here; transformers/etc. inherit the project pin.
 ]
 
 [dependency-groups]
