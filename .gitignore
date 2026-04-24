@@ -11,3 +11,10 @@ annotation/cloudflared/
 *.zip
 results.json
 
+# Claude Code — never commit (local-only)
+.claude/
+
+# Local-only working artifacts
+.logs/
+.playwright-mcp/
+

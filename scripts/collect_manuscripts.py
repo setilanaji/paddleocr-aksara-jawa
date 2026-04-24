@@ -20,6 +20,15 @@ Usage:
         --manifests manifests.txt \\
         --output data/real/
 
+    # From local IIIF manifest JSON files (for bot-walled hosts like Leiden —
+    # fetch the JSON in a browser once, save locally, then run offline)
+    uv run python scripts/collect_manuscripts.py \\
+        --manifest-files annotation/leiden_or1871_a.json \\
+                         annotation/leiden_or1871_b.json \\
+                         annotation/leiden_or1871_c.json \\
+        --output data/real/ \\
+        --max_pages_per_manifest 5
+
     # From a file of direct image URLs
     uv run python scripts/collect_manuscripts.py \\
         --images urls.txt \\
@@ -37,6 +46,7 @@ Usage:
 import argparse
 import csv
 import io
+import json
 import re
 import sys
 import time
@@ -201,25 +211,33 @@ def read_url_list(path: Path) -> list[str]:
 
 
 def collect_from_manifests(
-    manifest_urls: list[str],
+    manifest_refs: list[str],
     output_dir: Path,
     sources_csv: Path,
     seen: set[str],
     width: int,
     max_pages_per_manifest: int | None,
+    skip_canvases_per_manifest: int,
     start_idx: int,
 ) -> int:
-    """Download images referenced by a list of IIIF manifest URLs. Returns new next index."""
+    """Download images referenced by IIIF manifests. Each ref is either an HTTP(S) URL or a path to a local JSON file."""
     idx = start_idx
-    for manifest_url in tqdm(manifest_urls, desc="manifests", unit="manifest"):
+    for manifest_ref in tqdm(manifest_refs, desc="manifests", unit="manifest"):
         try:
-            r = http_get(manifest_url)
-            manifest = r.json()
-        except (CollectError, ValueError) as e:
-            print(f"  SKIP manifest {manifest_url}: {e}", file=sys.stderr)
+            if manifest_ref.startswith(("http://", "https://")):
+                manifest = http_get(manifest_ref).json()
+                manifest_url = manifest_ref
+            else:
+                manifest = json.loads(Path(manifest_ref).read_text(encoding="utf-8"))
+                # Record the canonical remote URL for provenance, not the local path
+                manifest_url = manifest.get("@id") or manifest.get("id") or manifest_ref
+        except (CollectError, ValueError, OSError) as e:
+            print(f"  SKIP manifest {manifest_ref}: {e}", file=sys.stderr)
             continue
 
         pages = list(iter_canvas_images(manifest))
+        if skip_canvases_per_manifest:
+            pages = pages[skip_canvases_per_manifest:]
         if max_pages_per_manifest:
             pages = pages[:max_pages_per_manifest]
 
@@ -239,8 +257,19 @@ def collect_from_manifests(
             try:
                 download_to_jpg(fetch_url, dest, local_resize)
             except (CollectError, OSError, Image.UnidentifiedImageError) as e:
-                print(f"  SKIP {fetch_url}: {e}", file=sys.stderr)
-                continue
+                # IIIF servers sometimes reject the sized URL (e.g. Leiden caps
+                # maxArea and returns 403 when target width > native width).
+                # Retry with full-res and resize locally.
+                if fetch_url != image_url:
+                    try:
+                        download_to_jpg(image_url, dest, width)
+                        fetch_url = image_url
+                    except (CollectError, OSError, Image.UnidentifiedImageError) as e2:
+                        print(f"  SKIP {image_url} (fallback from {fetch_url}): {e2}", file=sys.stderr)
+                        continue
+                else:
+                    print(f"  SKIP {fetch_url}: {e}", file=sys.stderr)
+                    continue
 
             append_source(
                 sources_csv,
@@ -303,6 +332,12 @@ def main():
         help="Path to a text file of IIIF manifest URLs (one per line)",
     )
     ap.add_argument(
+        "--manifest-files",
+        type=Path,
+        nargs="+",
+        help="Local IIIF manifest JSON files (use when the manifest host is bot-walled, e.g. Leiden)",
+    )
+    ap.add_argument(
         "--images",
         type=Path,
         help="Path to a text file of direct image URLs (one per line)",
@@ -325,10 +360,16 @@ def main():
         default=None,
         help="Cap pages downloaded per manifest (default: no cap)",
     )
+    ap.add_argument(
+        "--skip-canvases-per-manifest",
+        type=int,
+        default=0,
+        help="Skip the first N canvases of each manifest (front-matter: bindings, flyleaves). Default: 0",
+    )
     args = ap.parse_args()
 
-    if not args.manifests and not args.images:
-        print("ERROR: provide --manifests and/or --images", file=sys.stderr)
+    if not args.manifests and not args.manifest_files and not args.images:
+        print("ERROR: provide --manifests, --manifest-files, and/or --images", file=sys.stderr)
         sys.exit(1)
 
     output_dir: Path = args.output
@@ -346,12 +387,19 @@ def main():
     print(f"Target width      : {width or 'original'}")
     print()
 
+    manifest_refs: list[str] = []
     if args.manifests:
-        manifest_urls = read_url_list(args.manifests)
-        print(f"Reading {len(manifest_urls)} manifest URLs from {args.manifests}")
+        urls = read_url_list(args.manifests)
+        print(f"Reading {len(urls)} manifest URLs from {args.manifests}")
+        manifest_refs.extend(urls)
+    if args.manifest_files:
+        paths = [str(p) for p in args.manifest_files]
+        print(f"Reading {len(paths)} local manifest file(s)")
+        manifest_refs.extend(paths)
+    if manifest_refs:
         idx = collect_from_manifests(
-            manifest_urls, output_dir, sources_csv, seen, width,
-            args.max_pages_per_manifest, idx,
+            manifest_refs, output_dir, sources_csv, seen, width,
+            args.max_pages_per_manifest, args.skip_canvases_per_manifest, idx,
         )
 
     if args.images:
