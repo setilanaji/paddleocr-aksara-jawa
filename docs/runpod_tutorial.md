@@ -247,15 +247,32 @@ paddleformers-cli export training/aksara_jawa_lora_export.yaml
 - Loads base `PaddlePaddle/PaddleOCR-VL` (~2 GB, cached from training)
 - Applies the LoRA adapter on top
 - Writes the merged complete model to `./PaddleOCR-VL-Aksara-Jawa-lora/export/`
-- Copies the custom `.py` files (`configuration_paddleocr_vl.py`, `modeling_paddleocr_vl.py`, etc.) into the export dir
 
-**Verify:**
+**Verify the merged weights are present:**
 
 ```bash
-ls PaddleOCR-VL-Aksara-Jawa-lora/export/ | head
+ls PaddleOCR-VL-Aksara-Jawa-lora/export/ | grep -E "model.*safetensors|config\.json"
 ```
 
-**Expect** a complete model directory: `config.json`, `*.safetensors` (multiple shards, ~2 GB total), the four `*_paddleocr_vl.py` files, `inference.yml`, tokenizer files. **This is the dir you upload to HF, not the parent.**
+**Expect:** `config.json`, `model-*.safetensors` (one or more shards), `model.safetensors.index.json`.
+
+### Add the custom .py modeling files (paddleformers doesn't copy them at export time)
+
+`paddleformers-cli export` merges the weights but does **not** copy the four `*_paddleocr_vl.py` files even if `copy_custom_file_list` is set in the export config. Pull them straight from the base model HF repo into the export dir:
+
+```bash
+huggingface-cli download PaddlePaddle/PaddleOCR-VL configuration_paddleocr_vl.py modeling_paddleocr_vl.py image_processing_paddleocr_vl.py processing_paddleocr_vl.py inference.yml --local-dir PaddleOCR-VL-Aksara-Jawa-lora/export/
+```
+
+> Keep this command on **one line**. Multi-line backslash continuation is fragile here — a single trailing space after `\` silently turns the rest of the lines into separate failed commands.
+
+Verify all five landed:
+
+```bash
+ls PaddleOCR-VL-Aksara-Jawa-lora/export/ | grep -E "\.py$|inference\.yml"
+```
+
+**Expect:** all five filenames listed. **This is now the dir you upload to HF, not the parent.**
 
 ---
 
@@ -362,6 +379,19 @@ You uploaded the raw LoRA adapter directory instead of the merged model.
 which `transformers.AutoModelForCausalLM.from_pretrained` cannot load on its own.
 Run `paddleformers-cli export` first (see §5c) and upload `<output_dir>/export/`,
 not `<output_dir>/`.
+
+### Evaluation: `KeyError: 'default'` in `ROPE_INIT_FUNCTIONS`
+The upstream `modeling_paddleocr_vl.py` looks up `ROPE_INIT_FUNCTIONS["default"]`, which transformers removed in 5.0. There is no released transformers version that satisfies both this code's needs (it also wants `inputs_embeds`, the post-5.2 name). `scripts/evaluate.py` re-registers the 4.57.x implementation before loading the model. If you write your own inference script, copy the same monkey-patch.
+
+### Evaluation: `create_causal_mask() got an unexpected keyword argument 'inputs_embeds'`
+The custom `modeling_paddleocr_vl.py` calls `create_causal_mask(inputs_embeds=...)` (parameter renamed in transformers 5.6). With an older transformers (4.x or early 5.x using `input_embeds`), every inference fails. Bump the pin in `pyproject.toml`:
+```toml
+"transformers>=5.6",
+```
+Then `uv sync --extra eval` and re-run.
+
+### Evaluation: `requires the protobuf library but it was not found`
+The Llama tokenizer in `transformers` decodes `tokenizer.model` (sentencepiece) via `protobuf` and doesn't pull it as a hard dep. Either `uv pip install protobuf` for an immediate fix, or add `"protobuf>=4.0"` to the `eval` extra in `pyproject.toml` so `uv sync --extra eval` doesn't strip it.
 
 ### Evaluation: `cannot import name 'cached_assets_path' from 'huggingface_hub'`
 `paddleocr` still calls `cached_assets_path`, which `huggingface_hub` removed

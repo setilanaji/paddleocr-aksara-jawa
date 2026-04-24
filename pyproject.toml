@@ -13,7 +13,10 @@ dependencies = [
     "opencv-python-headless>=4.8.0",
     "numpy>=2.0.0",
     "faker>=20.0.0",
-    "huggingface-hub>=0.20,<1.0",   # paddleocr requires <1.0 (still uses cached_assets_path)
+    # huggingface-hub: do not pin here. Resolves transitively. paddleocr
+    # (system-pip, not in uv venv) needs <1.0 for `cached_assets_path`;
+    # transformers>=5.6 in the eval extra needs >=1.5. The two never
+    # coexist in the same env, so let each resolve its own.
     "jiwer>=3.0.0",
     "rapidfuzz>=3.0.0",
     "pandas>=2.0.0",
@@ -31,11 +34,12 @@ paddle = [
 ]
 eval = [
     "torch>=2.0.0",
-    "transformers>=4.57.1",
+    "transformers>=5.6",   # PaddleOCR-VL modeling uses `inputs_embeds` (renamed in 5.6); older 4.x/early-5.x errors with "unexpected keyword argument 'inputs_embeds'"
     "accelerate>=0.34.0",
     "einops>=0.7.0",
     "torchvision>=0.19.0",
     "sentencepiece>=0.2.0",
+    "protobuf>=4.0",   # transformers' LlamaConverter needs it to parse tokenizer.model
     # huggingface_hub pinned at top-level (paddleocr needs <1.0). No need
     # to repeat here; transformers/etc. inherit the project pin.
 ]

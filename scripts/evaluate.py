@@ -169,12 +169,30 @@ def run_model_inference(
         import torch
         from PIL import Image
         from transformers import AutoModelForCausalLM, AutoProcessor
+        from transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS
     except ImportError as e:
         print(
             f"ERROR: inference dependencies missing ({e}). Install with:\n"
             f"    uv sync --extra eval"
         )
         sys.exit(1)
+
+    # PaddleOCR-VL's modeling code references ROPE_INIT_FUNCTIONS["default"],
+    # which transformers removed in 5.0. Re-register the 4.57.x implementation.
+    if "default" not in ROPE_INIT_FUNCTIONS:
+        def _compute_default_rope_parameters(config=None, device=None, seq_len=None):
+            base = config.rope_theta
+            partial_rotary_factor = getattr(config, "partial_rotary_factor", 1.0)
+            head_dim = getattr(config, "head_dim", None) or (
+                config.hidden_size // config.num_attention_heads
+            )
+            dim = int(head_dim * partial_rotary_factor)
+            inv_freq = 1.0 / (
+                base ** (torch.arange(0, dim, 2, dtype=torch.int64)
+                         .to(device=device, dtype=torch.float) / dim)
+            )
+            return inv_freq, 1.0  # (inv_freq, attention_factor)
+        ROPE_INIT_FUNCTIONS["default"] = _compute_default_rope_parameters
 
     print(f"Loading model from: {model_path}")
     model = AutoModelForCausalLM.from_pretrained(
