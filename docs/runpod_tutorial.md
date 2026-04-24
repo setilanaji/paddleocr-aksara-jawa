@@ -157,7 +157,9 @@ Detach from tmux: `tmux detach` or `Ctrl+b` then `d`. You can reattach anytime w
 
 ---
 
-## 5. Start training (~2–3 hours)
+## 5. Start training (~25 min on A100 with 3k-sample dataset)
+
+> **Wall-clock note.** The upstream reference config was tuned for a **16k-sample** Bengali set, where 5 epochs takes ~2 hr. With this project's ~3k-sample dataset, the same config finishes in ~25 min on A100. Expect proportional growth as you add real annotations: doubling the dataset doubles the runtime at the same epoch count.
 
 ### 5a. One-time pod prep (~30 s)
 
@@ -328,6 +330,22 @@ ln -sfn /workspace/paddleocr-aksara-jawa/data training/data
 Dataset is in the old `image_info`/`text_info` schema; the current config
 wants the `messages`/`images` schema (commit `7a8d997`). Regenerate on the
 pod from `data/*/ground_truth.jsonl` — see §5a step 2.
+
+### Evaluation: `cannot import name 'cached_assets_path' from 'huggingface_hub'`
+`paddleocr` still calls `cached_assets_path`, which `huggingface_hub` removed
+in 1.0. Without a pin, `uv run --extra eval` grabs the latest hub (≥1.x) and
+every paddleocr-touching import dies. The fix is a pin in `pyproject.toml`:
+```toml
+eval = [
+    # ...
+    "huggingface_hub>=0.20,<1.0",
+]
+```
+Then `uv sync --extra eval && uv pip list | grep huggingface` to confirm a
+0.x version is installed. If the pin is already there but uv still resolves
+>=1.0, clear the lock and re-sync: `rm uv.lock && uv sync --extra eval`.
+Lift the pin once paddleocr ships a hub-1.x-compatible release
+(`pip index versions paddleocr`).
 
 ### Training crashes at first eval step with `NameError: name 'GPTModel' is not defined`
 Upstream bug in `paddleformers/trainer/trainer.py:4460` — the VL-LoRA branch
