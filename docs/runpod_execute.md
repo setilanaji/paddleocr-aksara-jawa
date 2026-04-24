@@ -39,11 +39,11 @@ rclone config create r2 s3 provider=Cloudflare env_auth=false \
 
 # Push training-ready data. Mirrors repo layout so a single rclone copy on the
 # pod lands files in the exact paths the training config expects.
-rclone copy data/synthetic      "r2:$R2_BUCKET/training-bundle/data/synthetic"      --transfers 8
-rclone copy data/semi_synthetic "r2:$R2_BUCKET/training-bundle/data/semi_synthetic" --transfers 8
-rclone copy data/eval           "r2:$R2_BUCKET/training-bundle/data/eval"           --transfers 8
-rclone copy training/ocr_vl_sft-train_aksara_jawa.jsonl "r2:$R2_BUCKET/training-bundle/training/"
-rclone copy training/ocr_vl_sft-test_aksara_jawa.jsonl  "r2:$R2_BUCKET/training-bundle/training/"
+rclone copy data/synthetic      "r2:$R2_BUCKET/training-bundle/data/synthetic"      --transfers 8 --s3-no-check-bucket
+rclone copy data/semi_synthetic "r2:$R2_BUCKET/training-bundle/data/semi_synthetic" --transfers 8 --s3-no-check-bucket
+rclone copy data/eval           "r2:$R2_BUCKET/training-bundle/data/eval"           --transfers 8 --s3-no-check-bucket
+rclone copyto --s3-no-check-bucket training/ocr_vl_sft-train_aksara_jawa.jsonl "r2:$R2_BUCKET/training-bundle/training/ocr_vl_sft-train_aksara_jawa.jsonl"
+rclone copyto --s3-no-check-bucket training/ocr_vl_sft-test_aksara_jawa.jsonl  "r2:$R2_BUCKET/training-bundle/training/ocr_vl_sft-test_aksara_jawa.jsonl"
 ```
 
 Re-run only the tiers that changed — `rclone copy` skips unchanged files.
@@ -65,7 +65,7 @@ rclone config create r2 s3 provider=Cloudflare env_auth=false \
   access_key_id="$R2_ACCESS_KEY_ID" secret_access_key="$R2_SECRET_ACCESS_KEY" \
   region=auto endpoint="$R2_ENDPOINT" >/dev/null && \
 rclone copy "r2:$R2_BUCKET/training-bundle/" /workspace/paddleocr-aksara-jawa/ \
-  --transfers 16 --progress && \
+  --transfers 16 --progress --s3-no-check-bucket && \
 echo "=== DATA DONE ==="
 ```
 
