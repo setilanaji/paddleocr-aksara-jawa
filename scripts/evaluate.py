@@ -177,6 +177,27 @@ def run_model_inference(
         )
         sys.exit(1)
 
+    # transformers 5.x's PreTrainedModel._init_weights calls
+    # `module.compute_default_rope_parameters` on rotary embedding modules
+    # during its post-load weight initialization pass. PaddleOCR-VL's
+    # RotaryEmbedding stores the function as `rope_init_fn` instead, and
+    # _init_weights blows up with AttributeError. The weights are *already*
+    # loaded (we have no actually-missing keys) — this is just defensive
+    # re-init for would-be-missing modules. Wrap _init_weights to swallow
+    # this specific failure; everything else propagates normally.
+    import transformers.modeling_utils as _tmu
+    if not getattr(_tmu.PreTrainedModel._init_weights, "_aksara_patched", False):
+        _orig_init_weights = _tmu.PreTrainedModel._init_weights
+        def _safe_init_weights(self, module):
+            try:
+                return _orig_init_weights(self, module)
+            except AttributeError as exc:
+                if "compute_default_rope_parameters" in str(exc):
+                    return  # weights loaded fine; rope is already correct
+                raise
+        _safe_init_weights._aksara_patched = True
+        _tmu.PreTrainedModel._init_weights = _safe_init_weights
+
     # PaddleOCR-VL's modeling code references ROPE_INIT_FUNCTIONS["default"],
     # which transformers removed in 5.0. Re-register the 4.57.x implementation
     # so the model can initialise its RotaryEmbedding without crashing.
