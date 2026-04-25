@@ -244,6 +244,40 @@ def run_model_inference(
         torch_dtype=torch.bfloat16,
         device_map="auto",
     ).eval()
+
+    # transformers 5.6+ no longer auto-creates `cache_position` for remote-code
+    # models, but PaddleOCR-VL's prepare_inputs_for_generation still does
+    # `if cache_position[0] != 0:` and crashes with NoneType subscript. Wrap
+    # the method to fill in the position vector that transformers used to pass.
+    _model_cls = type(model)
+    if not getattr(_model_cls.prepare_inputs_for_generation, "_aksara_patched", False):
+        _orig_prep = _model_cls.prepare_inputs_for_generation
+        def _prep_with_cache_position(self, input_ids, past_key_values=None, **kwargs):
+            if kwargs.get("cache_position") is None:
+                past_seen = 0
+                if past_key_values is not None:
+                    try:
+                        past_seen = past_key_values.get_seq_length()
+                    except (AttributeError, TypeError):
+                        try:
+                            past_seen = past_key_values[0][0].shape[-2]
+                        except Exception:
+                            past_seen = 0
+                cur_len = input_ids.shape[1]
+                kwargs["cache_position"] = torch.arange(
+                    past_seen, past_seen + cur_len - past_seen,
+                    device=input_ids.device,
+                ) if cur_len > past_seen else torch.arange(
+                    past_seen, cur_len, device=input_ids.device,
+                )
+                # Simpler: just cover positions [past_seen, cur_len)
+                kwargs["cache_position"] = torch.arange(
+                    past_seen, cur_len, device=input_ids.device,
+                )
+            return _orig_prep(self, input_ids, past_key_values=past_key_values, **kwargs)
+        _prep_with_cache_position._aksara_patched = True
+        _model_cls.prepare_inputs_for_generation = _prep_with_cache_position
+
     processor = AutoProcessor.from_pretrained(
         model_path, trust_remote_code=True, use_fast=True
     )
