@@ -160,10 +160,16 @@ def run_model_inference(
     ground_truth: list[dict],
     prompt: str = DEFAULT_PROMPT,
     max_new_tokens: int = 512,
+    peft_adapter: str | None = None,
 ) -> list[str]:
     """
     Run PaddleOCR-VL inference on eval images via the HuggingFace transformers
     interface with trust_remote_code. Returns predictions in ground_truth order.
+
+    If `peft_adapter` is provided, `model_path` is treated as the BASE model
+    and the adapter directory's LoRA weights are applied at runtime via
+    `peft.PeftModel.from_pretrained`. This skips the paddleformers-cli export
+    merge step that was discovered to corrupt the merged safetensors output.
     """
     try:
         import torch
@@ -244,6 +250,23 @@ def run_model_inference(
         torch_dtype=torch.bfloat16,
         device_map="auto",
     ).eval()
+
+    if peft_adapter:
+        # Apply LoRA at runtime instead of using the broken merged safetensors.
+        # paddleformers-cli writes the adapter as `peft_model-*.safetensors` +
+        # `lora_config.json`; HF peft expects `adapter_model.safetensors` +
+        # `adapter_config.json`. If those names aren't found, peft will raise
+        # — point the user at convert_paddleformers_lora.py (TBD) or symlink.
+        try:
+            from peft import PeftModel
+        except ImportError:
+            print("ERROR: peft not installed. Add it to the eval extra:")
+            print("    uv pip install peft")
+            sys.exit(1)
+        print(f"  Applying LoRA adapter from: {peft_adapter}")
+        model = PeftModel.from_pretrained(model, peft_adapter).eval()
+        print(f"  LoRA loaded; trainable params now: "
+              f"{sum(p.numel() for p in model.parameters() if p.requires_grad):,}")
 
     # transformers 5.6+ no longer auto-creates `cache_position` for remote-code
     # models, but PaddleOCR-VL's prepare_inputs_for_generation still does
@@ -504,6 +527,10 @@ def main():
                     help="Number of worst-performing images to print (default: 10)")
     ap.add_argument("--prompt",              type=str, default=DEFAULT_PROMPT,
                     help="OCR prompt sent to the model (default: 'OCR:')")
+    ap.add_argument("--peft_adapter",        type=str, default=None,
+                    help="Optional path to a LoRA adapter dir to apply on top of --model_path "
+                         "at runtime via peft.PeftModel.from_pretrained. Use this to bypass "
+                         "the broken paddleformers-cli merged safetensors.")
     args = ap.parse_args()
 
     eval_dir = Path(args.eval_dir)
@@ -537,7 +564,8 @@ def main():
     elif args.model_path:
         print(f"\nRunning model inference on {len(ground_truth)} images...")
         predictions = run_model_inference(
-            args.model_path, eval_dir, ground_truth, prompt=args.prompt
+            args.model_path, eval_dir, ground_truth,
+            prompt=args.prompt, peft_adapter=args.peft_adapter,
         )
 
     else:
