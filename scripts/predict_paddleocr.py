@@ -98,6 +98,9 @@ def main() -> None:
     ap.add_argument("--pipeline_version", default="v1",
                     choices=["v1", "v1.5"],
                     help="PaddleOCR-VL pipeline version (v1.5 is current upstream; v1 matches our trained model)")
+    ap.add_argument("--backend", default="native",
+                    choices=["native", "vllm-server"],
+                    help="paddlex inference backend. 'native' reads safetensors directly (required for our HF-format export); 'vllm-server' talks to a separately-launched vLLM server.")
     args = ap.parse_args()
 
     try:
@@ -125,6 +128,7 @@ def main() -> None:
         pipeline_version=args.pipeline_version,
         vl_rec_model_name=args.model_name,
         vl_rec_model_dir=str(model_dir),
+        vl_rec_backend=args.backend,
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
     )
