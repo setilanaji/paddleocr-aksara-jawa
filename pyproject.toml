@@ -32,7 +32,12 @@ paddle = [
     "paddleocr>=3.0.0",
 ]
 eval = [
-    "torch>=2.0.0",
+    # torch upper-bound: 2.6+ uses cu126, requires CUDA driver 12.5+. The
+    # RunPod `runpod-torch-v240` template ships system CUDA 12.4, so torch 2.8
+    # silently segfaults at import (cudaGetDriverEntryPointByVersion missing).
+    # 2.5.x is the last cu124-native release. Lift the bound when the pod
+    # template upgrades to CUDA 12.6+.
+    "torch>=2.4,<2.6",
     # PaddleOCR-VL's modeling code (modeling_paddleocr_vl.py) was authored
     # against transformers 4.x — it relies on ROPE_INIT_FUNCTIONS["default"]
     # (removed in 5.0) and `input_embeds` (renamed `inputs_embeds` in 5.x).
