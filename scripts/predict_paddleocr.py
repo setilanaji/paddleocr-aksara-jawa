@@ -98,9 +98,8 @@ def main() -> None:
     ap.add_argument("--pipeline_version", default="v1",
                     choices=["v1", "v1.5"],
                     help="PaddleOCR-VL pipeline version (v1.5 is current upstream; v1 matches our trained model)")
-    ap.add_argument("--backend", default="native",
-                    choices=["native", "vllm-server"],
-                    help="paddlex inference backend. 'native' reads safetensors directly (required for our HF-format export); 'vllm-server' talks to a separately-launched vLLM server.")
+    ap.add_argument("--backend", default="transformers",
+                    help="paddlex inference engine for the VL recogniser. PaddleOCR-VL-0.9B supports 'paddle_dynamic' (needs .pdmodel files), 'transformers' (reads HF safetensors — our case), or 'genai_client' (talks to a separate vLLM server).")
     args = ap.parse_args()
 
     try:
