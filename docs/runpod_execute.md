@@ -189,6 +189,21 @@ huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa \
 
 ## Step 5 — Evaluate fine-tuned model
 
+Two backends available — see `runpod_tutorial.md` §7 for the full discussion.
+**Path A (paddleocr-native, recommended):**
+
+```bash
+cd /workspace/paddleocr-aksara-jawa && \
+python3 scripts/predict_paddleocr.py \
+    --model_dir /workspace/paddleocr-aksara-jawa/PaddleOCR-VL-Aksara-Jawa-lora/export \
+    --eval_dir data/eval/ --output predictions_finetuned.txt && \
+uv run python scripts/evaluate.py \
+    --predictions predictions_finetuned.txt \
+    --eval_dir data/eval/ --output results.json
+```
+
+**Path B (transformers fallback)** if Path A errors on checkpoint format:
+
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
 uv run --extra eval python scripts/evaluate.py \
@@ -198,8 +213,8 @@ uv run --extra eval python scripts/evaluate.py \
     --output results.json
 ```
 
-This prints per-tier CER/WER + pasangan F1 + delta vs the base model. Paste
-the summary into `README.md` Results table and `docs/data_report.md`.
+Either prints per-tier CER/WER + pasangan F1. Paste the summary into
+`README.md` Results table and `docs/data_report.md`.
 
 ---
 

@@ -294,8 +294,45 @@ huggingface-cli upload setilanaji/PaddleOCR-VL-Aksara-Jawa \
 
 ## 7. Evaluate against the synthetic eval set
 
+Two backends are wired up. **Try Path A first** — it matches the official ERNIE SFT docs and uses the same paddleocr stack the model was trained for.
+
+### 7a. Path A — paddleocr-native (recommended)
+
+The official PaddleOCR-VL SFT guide loads a fine-tuned safetensors checkpoint with `--vl_rec_model_dir` pointing at the merged LoRA export dir. `scripts/predict_paddleocr.py` wraps that and writes one prediction per eval image to a file; `evaluate.py --predictions` then scores it.
+
+Run in the **system Python** (paddleocr lives there, not in the uv venv):
+
 ```bash
 cd /workspace/paddleocr-aksara-jawa && \
+python3 scripts/predict_paddleocr.py \
+    --model_dir /workspace/paddleocr-aksara-jawa/PaddleOCR-VL-Aksara-Jawa-lora/export \
+    --eval_dir data/eval/ \
+    --output predictions_finetuned.txt && \
+python3 scripts/predict_paddleocr.py \
+    --model_dir "$(huggingface-cli download PaddlePaddle/PaddleOCR-VL --quiet)" \
+    --eval_dir data/eval/ \
+    --output predictions_baseline.txt && \
+uv run python scripts/evaluate.py \
+    --predictions predictions_finetuned.txt \
+    --eval_dir data/eval/ \
+    --output results_finetuned.json && \
+uv run python scripts/evaluate.py \
+    --predictions predictions_baseline.txt \
+    --eval_dir data/eval/ \
+    --output results_baseline.json
+```
+
+The paddleocr download for the baseline lands the base model into `~/.cache/huggingface/...`; we hand that path back to `predict_paddleocr.py` so the loader uses the same code path for both.
+
+If paddleocr complains about the checkpoint format, you've hit the safetensors-vs-paddle-inference issue noted in v1's `training_runs.md`. Fall through to Path B.
+
+### 7b. Path B — transformers fallback
+
+`scripts/evaluate.py` loads the model via `AutoModelForCausalLM.from_pretrained(trust_remote_code=True)`. The eval extra now pins `transformers>=4.55,<5.0` because PaddleOCR-VL's modeling code predates transformers 5.x (the previous `>=5.6` pin was a misdiagnosis — see Troubleshooting).
+
+```bash
+cd /workspace/paddleocr-aksara-jawa && \
+uv sync --extra eval && \
 uv run --extra eval python scripts/evaluate.py \
     --model_path setilanaji/PaddleOCR-VL-Aksara-Jawa \
     --baseline_model_path PaddlePaddle/PaddleOCR-VL \
@@ -303,12 +340,13 @@ uv run --extra eval python scripts/evaluate.py \
     --output results.json
 ```
 
-**What to look for:**
+**What to look for in either path:**
 
-- **Baseline CER** (base model before fine-tuning) on synthetic eval: usually very high or essentially random — PaddleOCR-VL hasn't seen Aksara Jawa
-- **Fine-tuned CER** on synthetic eval: should be near 0 (<5% CER, usually <1%) — the model has been trained on synthetic, so eval is in-distribution
+- **Baseline CER** on synthetic eval: high (PaddleOCR-VL has not seen Aksara Jawa)
+- **Fine-tuned CER** on synthetic eval: near 0 (<5% CER, usually <1%) — eval is in-distribution
+- The delta is the v1 improvement signal worth quoting in the model card
 
-**This synthetic CER is not your competition number.** The hackathon requires a **real-data** evaluation set. You build that by annotating the 120 candidates in Label Studio (see [`annotation_guide.md`](annotation_guide.md)). Once you have ≥50 real annotations, rerun `scripts/evaluate.py` with `--eval_dir data/real/` instead.
+**Synthetic CER is not the competition number.** The hackathon requires a **real-data** eval set. Build it by annotating the 120 candidates in Label Studio (see [`annotation_guide.md`](annotation_guide.md)). Once you have ≥50 real annotations, rerun whichever path worked above with `--eval_dir data/real/`.
 
 ---
 
@@ -380,34 +418,26 @@ which `transformers.AutoModelForCausalLM.from_pretrained` cannot load on its own
 Run `paddleformers-cli export` first (see §5c) and upload `<output_dir>/export/`,
 not `<output_dir>/`.
 
-### Evaluation: `KeyError: 'default'` in `ROPE_INIT_FUNCTIONS`
-The upstream `modeling_paddleocr_vl.py` looks up `ROPE_INIT_FUNCTIONS["default"]`, which transformers removed in 5.0. There is no released transformers version that satisfies both this code's needs (it also wants `inputs_embeds`, the post-5.2 name). `scripts/evaluate.py` re-registers the 4.57.x implementation before loading the model. If you write your own inference script, copy the same monkey-patch.
+### Evaluation: any of `KeyError: 'default'`, `compute_default_rope_parameters` missing, or `create_causal_mask() got 'inputs_embeds'`
+All three are symptoms of running PaddleOCR-VL on a transformers version newer than the model's modeling code expects. The model was authored against transformers 4.x; chasing the breaks "upward" into 5.x leads through one new error after another (we tried up to 5.6 in v1 and gave up).
 
-### Evaluation: `create_causal_mask() got an unexpected keyword argument 'inputs_embeds'`
-The custom `modeling_paddleocr_vl.py` calls `create_causal_mask(inputs_embeds=...)` (parameter renamed in transformers 5.6). With an older transformers (4.x or early 5.x using `input_embeds`), every inference fails. Bump the pin in `pyproject.toml`:
-```toml
-"transformers>=5.6",
+The fix is to pin **down**, not up. The eval extra now uses `transformers>=4.55,<5.0` (per the official inference snippet in [HF discussion #1](https://huggingface.co/PaddlePaddle/PaddleOCR-VL/discussions/1)). If you've manually upgraded, revert:
+```bash
+uv sync --extra eval        # picks up the pinned <5.0 transformers
 ```
-Then `uv sync --extra eval` and re-run.
+If a future release of `modeling_paddleocr_vl.py` ships transformers-5 compatibility, lift the upper bound.
 
 ### Evaluation: `requires the protobuf library but it was not found`
 The Llama tokenizer in `transformers` decodes `tokenizer.model` (sentencepiece) via `protobuf` and doesn't pull it as a hard dep. Either `uv pip install protobuf` for an immediate fix, or add `"protobuf>=4.0"` to the `eval` extra in `pyproject.toml` so `uv sync --extra eval` doesn't strip it.
 
 ### Evaluation: `cannot import name 'cached_assets_path' from 'huggingface_hub'`
 `paddleocr` still calls `cached_assets_path`, which `huggingface_hub` removed
-in 1.0. Without a pin, `uv run --extra eval` grabs the latest hub (≥1.x) and
-every paddleocr-touching import dies. The fix is a pin in `pyproject.toml`:
-```toml
-eval = [
-    # ...
-    "huggingface_hub>=0.20,<1.0",
-]
-```
-Then `uv sync --extra eval && uv pip list | grep huggingface` to confirm a
-0.x version is installed. If the pin is already there but uv still resolves
->=1.0, clear the lock and re-sync: `rm uv.lock && uv sync --extra eval`.
-Lift the pin once paddleocr ships a hub-1.x-compatible release
-(`pip index versions paddleocr`).
+in 1.0. The project now pins `huggingface_hub>=0.20,<1.0` at top-level
+(safe because `transformers<5.0` in the eval extra is happy with hub 0.x too).
+Run `uv sync && uv pip list | grep huggingface` to confirm a 0.x version is
+installed. If uv still resolves >=1.0, clear the lock and re-sync:
+`rm uv.lock && uv sync --extra eval`. Lift the pin once paddleocr ships a
+hub-1.x-compatible release (`pip index versions paddleocr`).
 
 ### Training crashes at first eval step with `NameError: name 'GPTModel' is not defined`
 Upstream bug in `paddleformers/trainer/trainer.py:4460` — the VL-LoRA branch
