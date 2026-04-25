@@ -66,11 +66,20 @@ Run on **2026-04-25** (5 months after training) on a fresh A40 RunPod instance, 
 
 | Path | Mean CER | Mean WER | Output |
 |---|---|---|---|
-| `PaddlePaddle/PaddleOCR-VL` (baseline, transformers load) | **19.37** | **14.45** | Latin/Roman text |
-| Merged `model-*.safetensors` from `paddleformers-cli export` | **31.27** | **1.00** | U+FFFD replacement chars (invalid bytes) |
-| Base + our LoRA via `peft.PeftModel.from_pretrained` runtime | **3.23** | **1.07** | Constrained (Thai chars / digits) — partial LoRA load |
-| Baseline rerun against the peft-path baseline | **19.74** | **89.87** | Latin/Roman text (full 512 tokens) |
-| **ΔCER (peft path vs baseline)** | **−16.52** | — | — |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, run 1) | **19.37** | **14.45** | Latin/Roman text |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, run 2) | **19.74** | **89.87** | Latin/Roman text (longer outputs) |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, run 3, with `--processor_path local`) | **62.22** | **183.13** | Latin/Roman text (max_new_tokens hit) |
+| Merged `model-*.safetensors` via direct AutoModelForCausalLM (broken) | **31.27** | **1.00** | U+FFFD replacement chars (invalid bytes) |
+| **Base + our LoRA via `peft.PeftModel.from_pretrained` runtime (stable)** | **3.23** | **1.07** | Constrained ~60-char patterns (Thai chars / digits) — 580 / 586 LoRA loaded |
+| **ΔCER (best peft path vs best baseline)** | **−16.52** | — | — |
+| **ΔCER (best peft path vs worst baseline)** | **−58.99** | — | — |
+
+Baseline run-to-run variance is high (CER 19.37 → 62.22) because the base model's wrong-script output sometimes terminates short and sometimes hits `max_new_tokens=512`; the peft-fine-tuned numbers are stable at CER 3.23.
+
+**Qualitative finding:** the fine-tuned model learned a consistent ~60-character output pattern + early EOS, but the chars themselves are mostly Thai glyphs and repeating digits — it learned the *shape* of an OCR answer (short, terminated) but **not** the Aksara Jawa script itself. This is a real fine-tuning effect that the metric captures but is not yet usable OCR. Hypotheses for what's blocking real script output:
+- Visual head LoRA modules (6 of 586) weren't trained by paddleformers — vision→text alignment partially incomplete
+- Subtle precision loss in the safetensors round-trip (paddleformers paddle bf16 → HF safetensors)
+- The 3 k-sample synthetic-only training set is too small for the model to internalise an entirely new script vocabulary
 
 CER > 1.0 because both models generate up to `max_new_tokens=512` of wrong output against ~10–25-char references.
 

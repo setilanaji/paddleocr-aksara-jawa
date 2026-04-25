@@ -46,15 +46,19 @@ Run on the v1 synthetic eval set (150 single-line Aksara Jawa images, determinis
 
 **Path 1 — Runtime LoRA application via `peft.PeftModel.from_pretrained` (recommended path; current best numbers)**
 
-Loads `PaddlePaddle/PaddleOCR-VL` as the base, wraps with peft, applies our `peft_model-*.safetensors` adapter at runtime — skipping the merged `model-*.safetensors` entirely.
+Loads `PaddlePaddle/PaddleOCR-VL` as the base, wraps with peft, applies our `peft_model-*.safetensors` adapter at runtime — skipping the merged `model-*.safetensors` entirely. 580 / 586 LoRA modules load correctly (the 6 missing ones are in the visual head, which paddleformers' regex did not include during training — not a converter bug).
 
 | Model | Mean CER | Mean WER |
 |---|---|---|
-| `PaddlePaddle/PaddleOCR-VL` (baseline) | 19.74 | 89.87 |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, run 1) | 19.74 | 89.87 |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, run 2) | 62.22 | 183.13 |
 | Base + our LoRA adapter (peft runtime) | **3.23** | **1.07** |
-| **ΔCER** | **−16.52** | **−88.80** |
+| **ΔCER (best of two baseline runs)** | **−16.52** | — |
+| **ΔCER (worst of two baseline runs)** | **−58.99** | — |
 
-**Caveat:** the peft adapter loader emits a "Found missing adapter keys" warning — paddleformers names some module paths differently from what HF peft expects after wrapping (`base_model.model.<x>` mismatch). Some LoRA modules may not have loaded their trained weights. The Δ is real and meaningful (the fine-tuned model produces dramatically shorter, more constrained output) but the v2 priority is to fix the key mapping so all 290 LoRA modules load correctly — likely much better numbers once that lands.
+The fine-tuned numbers are stable across runs (CER 3.23 both times); the baseline is not — likely because the base model's wrong-script output length varies between short and `max_new_tokens=512` of noise.
+
+**Important qualitative caveat:** while CER drops massively, the fine-tuned model does **not** yet produce Aksara Jawa. Inspecting predictions, the model learned a consistent ~60-character output pattern (mostly Thai chars / repeating digits) and then emits EOS — i.e. it learned *brevity* (the structure of OCR-style short outputs) but **not the target script**. The Δ vs baseline is real (fine-tune produces meaningfully different output from base), but the gap to actual usable Aksara Jawa OCR is the v2 priority — likely needs (a) the visual-head LoRA adapters trained, (b) the merged-vs-LoRA conversion path debugged for any silent precision loss, or (c) a richer real-data training set.
 
 **Path 2 — Loading the merged `model-*.safetensors` directly (broken)**
 
