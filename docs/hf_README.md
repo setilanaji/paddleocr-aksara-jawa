@@ -40,16 +40,32 @@ Aksara Jawa is the traditional script of the Javanese language (75M+ speakers, p
 
 ## Evaluation
 
-Run on the v1 synthetic eval set (150 single-line Aksara Jawa images, deterministic seed) on 2026-04-25, A40 GPU, transformers 5.6.2 + nine compatibility patches in [`scripts/evaluate.py`](https://github.com/setilanaji/paddleocr-aksara-jawa/blob/main/scripts/evaluate.py):
+Run on the v1 synthetic eval set (150 single-line Aksara Jawa images, deterministic seed) on 2026-04-25 / 04-26, A40 GPU, transformers 5.6.2 + ten compatibility patches in [`scripts/evaluate.py`](https://github.com/setilanaji/paddleocr-aksara-jawa/blob/main/scripts/evaluate.py).
 
-| Model | Mean CER | Mean WER | Output character |
-|---|---|---|---|
-| `PaddlePaddle/PaddleOCR-VL` (baseline) | 19.37 | 14.45 | Latin / Roman text — model emits valid Unicode but has not seen the Javanese script |
-| `setilanaji/PaddleOCR-VL-Aksara-Jawa` (this model, v1) | 31.27 | 1.00 | U+FFFD replacement chars — invalid byte sequences from the language-model head |
+### Two inference paths attempted
 
-CER > 1.0 is mathematically possible because both models generate up to `max_new_tokens=512` of output; with reference strings of ~10–25 chars and predictions of 512 wrong chars, edit distance / reference length easily exceeds 1.
+**Path 1 — Runtime LoRA application via `peft.PeftModel.from_pretrained` (recommended path; current best numbers)**
 
-**This v1 model produces invalid bytes, not Aksara Jawa.** The training loss (0.1887, converged smoothly) and the LoRA adapter weights (`peft_model-*.safetensors` in this repo) are real and trained correctly — but the merged `model-*.safetensors` exported by `paddleformers-cli export` produce token IDs that decode to U+FFFD when read by the upstream `modeling_paddleocr_vl.py` via `transformers.AutoModelForCausalLM`. The merge step is the regression. See [Limitations](#limitations) and the [v2 plan](https://github.com/setilanaji/paddleocr-aksara-jawa/blob/main/docs/training_runs.md).
+Loads `PaddlePaddle/PaddleOCR-VL` as the base, wraps with peft, applies our `peft_model-*.safetensors` adapter at runtime — skipping the merged `model-*.safetensors` entirely.
+
+| Model | Mean CER | Mean WER |
+|---|---|---|
+| `PaddlePaddle/PaddleOCR-VL` (baseline) | 19.74 | 89.87 |
+| Base + our LoRA adapter (peft runtime) | **3.23** | **1.07** |
+| **ΔCER** | **−16.52** | **−88.80** |
+
+**Caveat:** the peft adapter loader emits a "Found missing adapter keys" warning — paddleformers names some module paths differently from what HF peft expects after wrapping (`base_model.model.<x>` mismatch). Some LoRA modules may not have loaded their trained weights. The Δ is real and meaningful (the fine-tuned model produces dramatically shorter, more constrained output) but the v2 priority is to fix the key mapping so all 290 LoRA modules load correctly — likely much better numbers once that lands.
+
+**Path 2 — Loading the merged `model-*.safetensors` directly (broken)**
+
+| Model | Mean CER | Output |
+|---|---|---|
+| `PaddlePaddle/PaddleOCR-VL` (baseline) | 19.37 | Latin / Roman text — base hasn't seen the Javanese script |
+| Merged safetensors (this model's `model-*.safetensors`) | 31.27 | U+FFFD replacement chars — invalid byte sequences |
+
+The `paddleformers-cli export` LoRA→base merge produced safetensors whose forward pass emits invalid UTF-8 when read by transformers. The training itself is sound (loss 0.1887, smooth convergence); the regression is in the merge. **Use Path 1 for inference; ignore the merged weights.**
+
+CER > 1.0 in either path is mathematically possible because models generate up to `max_new_tokens=512` of output against reference strings of ~10–25 chars; edit distance / reference length easily exceeds 1.
 
 ## Training data
 
@@ -91,7 +107,8 @@ Full config: [`training/aksara_jawa_lora_config.yaml`](https://github.com/setila
 
 ## Limitations
 
-- **Merged model produces invalid byte sequences.** The fine-tuned weights as exported via `paddleformers-cli export` (which merges the LoRA adapter into the base model and writes HF safetensors) generate token IDs that decode to U+FFFD when loaded with `transformers.AutoModelForCausalLM`. The base model loaded the same way produces valid Unicode (CER 19.37, mostly Latin output). The training itself was fine (loss 0.1887, smooth convergence) — the regression is in the paddle→safetensors merge step. The unmerged LoRA adapter `peft_model-00001-of-00001.safetensors` is also in this repo and may load correctly via `peft.PeftModel.from_pretrained` on top of the base — that's the **v2 priority** path.
+- **Merged model produces invalid byte sequences.** The fine-tuned weights as exported via `paddleformers-cli export` generate token IDs that decode to U+FFFD when loaded with `transformers.AutoModelForCausalLM`. Use the runtime peft path (Path 1 above) instead — it shows real ΔCER of −16.52 against the same baseline.
+- **peft adapter loading is partial.** Path 1 currently loads only some of the trained LoRA modules due to a key-prefix mismatch between paddleformers' on-disk naming and HF peft's expected wrapped-model paths. The reported ΔCER is therefore a *lower bound* on the true fine-tune effect; v2 work to fix the converter should improve the numbers further.
 - **Mostly-synthetic training data.** Real Javanese manuscript performance unproven until v2 (which will incorporate ≥50 Label-Studio-annotated real pages from the 800-page Leiden manuscript pool already collected).
 - **Pasangan (subscript conjuncts) handling not separately validated.** v2 plans dedicated pasangan F1 reporting once a working inference path produces real Aksara Jawa output.
 - **Single-line bias.** Eval set is single-line crops; multi-line / dense documents may degrade.

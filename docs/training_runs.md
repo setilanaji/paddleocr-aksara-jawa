@@ -64,10 +64,13 @@ Run on **2026-04-25** (5 months after training) on a fresh A40 RunPod instance, 
 
 **Results on the v1 synthetic eval set (n=150, deterministic seed):**
 
-| Model | Mean CER | Mean WER | Output character |
+| Path | Mean CER | Mean WER | Output |
 |---|---|---|---|
-| `PaddlePaddle/PaddleOCR-VL` (baseline) | **19.37** | **14.45** | Latin / Roman text — base model emits valid Unicode but cannot read Aksara Jawa |
-| `setilanaji/PaddleOCR-VL-Aksara-Jawa` (v1) | **31.27** | **1.00** | U+FFFD replacement chars only — invalid byte sequences |
+| `PaddlePaddle/PaddleOCR-VL` (baseline, transformers load) | **19.37** | **14.45** | Latin/Roman text |
+| Merged `model-*.safetensors` from `paddleformers-cli export` | **31.27** | **1.00** | U+FFFD replacement chars (invalid bytes) |
+| Base + our LoRA via `peft.PeftModel.from_pretrained` runtime | **3.23** | **1.07** | Constrained (Thai chars / digits) — partial LoRA load |
+| Baseline rerun against the peft-path baseline | **19.74** | **89.87** | Latin/Roman text (full 512 tokens) |
+| **ΔCER (peft path vs baseline)** | **−16.52** | — | — |
 
 CER > 1.0 because both models generate up to `max_new_tokens=512` of wrong output against ~10–25-char references.
 
