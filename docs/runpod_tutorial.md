@@ -445,6 +445,19 @@ The Python equivalent on current paddleocr is typically `vl_rec_backend="native"
 
 If no GenAI kwarg exists in your installed paddleocr, upgrade: `pip install -U "paddleocr[doc-parser]" "paddlex[ocr]"`. Or fall back to Path B (`scripts/evaluate.py --model_path ...`).
 
+**If `vl_rec_backend="native"` still raises `No Paddle model files were found`** — paddlex is mapping the kwarg to its classic paddle engine (which hunts for `.pdmodel`) instead of the GenAI engine (which reads safetensors). The fix needs to know what engine name routes to the genai/safetensors path on your installed paddlex. Run:
+
+```bash
+echo "=== HOW VL_REC_CONFIG MAPS BACKEND TO ENGINE ===" && \
+grep -n "backend\|engine\|genai" /usr/local/lib/python3.11/dist-packages/paddlex/inference/pipelines/paddleocr_vl/pipeline.py | head -40 && \
+echo && echo "=== SUPPORTED ENGINES FOR PaddleOCR-VL-0.9B ===" && \
+python3 -c "from paddlex.inference.models import _get_supported_engines; print(_get_supported_engines('PaddleOCR-VL-0.9B'))" && \
+echo && echo "=== ALL REGISTERED ENGINE NAMES ===" && \
+grep -rn "InferenceEngine.register\|register_engine\|@register" /usr/local/lib/python3.11/dist-packages/paddlex/inference/engines/ 2>/dev/null | head -20
+```
+
+The output tells you (a) how `vl_rec_backend=` is wired to an engine name, (b) which engines the model declares support for (likely `flexible` or similar for the genai path), (c) every engine paddlex has registered. Pick the one that's clearly the safetensors path and pass that as `--backend <name>` to `predict_paddleocr.py`.
+
 ### Evaluation: any of `KeyError: 'default'`, `compute_default_rope_parameters` missing, or `create_causal_mask() got 'inputs_embeds'`
 All three are symptoms of running PaddleOCR-VL on a transformers version newer than the model's modeling code expects. The model was authored against transformers 4.x; chasing the breaks "upward" into 5.x leads through one new error after another (we tried up to 5.6 in v1 and gave up).
 
