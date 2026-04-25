@@ -449,6 +449,99 @@ If no GenAI kwarg exists in your installed paddleocr, upgrade: `pip install -U "
 
 For most cases the simpler answer is **fall back to Path B** (`scripts/evaluate.py --model_path <export_dir>`), which loads the model directly via `transformers.AutoModelForCausalLM.from_pretrained(trust_remote_code=True)` — no paddlex involvement.
 
+### Evaluation (Path C — peft runtime): "Found missing adapter keys" → 0 LoRA loaded
+You ran `scripts/convert_paddleformers_to_peft.py` and `scripts/evaluate.py --peft_adapter ...`, but the eval log shows `LoRA loaded; trainable params now: 0` and a "Found missing adapter keys" warning listing every adapter slot. Means our rewritten safetensors keys don't match what HF peft expects after wrapping the base model — likely a `base_model.model.<x>` vs `base_model.model.language_model.<x>` mismatch (or similar nested-attribute path the converter didn't anticipate).
+
+Diagnose the exact diff with this block — paste output and the converter can be tightened:
+
+```bash
+cd /workspace/paddleocr-aksara-jawa && \
+uv run --extra eval python << 'EOF'
+import json, torch, importlib
+import transformers.modeling_utils as _t
+from transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS
+
+# minimal patches to load PaddleOCR-VL on transformers 5.x
+_orig = _t.PreTrainedModel._init_weights
+def _safe(self, m):
+    try: return _orig(self, m)
+    except AttributeError as e:
+        if 'compute_default_rope_parameters' in str(e): return
+        raise
+_t.PreTrainedModel._init_weights = _safe
+
+if 'default' not in ROPE_INIT_FUNCTIONS:
+    def _r(config=None, device=None, seq_len=None):
+        base = config.rope_theta
+        head_dim = getattr(config, 'head_dim', None) or (config.hidden_size // config.num_attention_heads)
+        return 1.0 / (base ** (torch.arange(0, head_dim, 2, dtype=torch.int64).to(device=device, dtype=torch.float) / head_dim)), 1.0
+    ROPE_INIT_FUNCTIONS['default'] = _r
+
+from transformers import AutoConfig, AutoModelForCausalLM
+cfg = AutoConfig.from_pretrained('PaddlePaddle/PaddleOCR-VL', trust_remote_code=True)
+mod = importlib.import_module(cfg.__class__.__module__.rsplit('.', 1)[0] + '.modeling_paddleocr_vl')
+mod.RotaryEmbedding.compute_default_rope_parameters = property(lambda self: self.rope_init_fn)
+base = AutoModelForCausalLM.from_pretrained('PaddlePaddle/PaddleOCR-VL', trust_remote_code=True, torch_dtype=torch.bfloat16, device_map='auto')
+
+ac = json.load(open('/workspace/paddleocr-aksara-jawa/PaddleOCR-VL-Aksara-Jawa-lora/export/adapter_config.json'))
+from peft import LoraConfig, get_peft_model
+lc = LoraConfig(r=ac['r'], lora_alpha=ac['lora_alpha'], lora_dropout=ac['lora_dropout'],
+                target_modules=ac['target_modules'], task_type=ac['task_type'], bias='none')
+peft_m = get_peft_model(base, lc)
+expected = [k for k in peft_m.state_dict().keys() if 'lora' in k]
+print(f'PEFT EXPECTS {len(expected)} LoRA keys. First 20:')
+for k in expected[:20]: print(f'  {k}')
+print(f'Last 5:')
+for k in expected[-5:]: print(f'  {k}')
+
+from safetensors import safe_open
+with safe_open('/workspace/paddleocr-aksara-jawa/PaddleOCR-VL-Aksara-Jawa-lora/export/adapter_model.safetensors', framework='pt') as f:
+    provided = list(f.keys())
+print(f'\nWE PROVIDED {len(provided)} keys. First 5:')
+for k in provided[:5]: print(f'  {k}')
+
+expected_set, provided_set = set(expected), set(provided)
+missing = expected_set - provided_set
+extra = provided_set - expected_set
+print(f'\nPEFT EXPECTS BUT WE DID NOT PROVIDE: {len(missing)}')
+print(f'WE PROVIDED BUT PEFT DID NOT EXPECT: {len(extra)}')
+if extra:
+    print('Sample OUR-EXTRA keys (first 5):')
+    for k in list(extra)[:5]: print(f'  {k}')
+if missing:
+    print('Sample MISSING-FROM-US keys (first 5):')
+    for k in list(missing)[:5]: print(f'  {k}')
+EOF
+```
+
+The output reveals exactly which path-prefix transformation is needed. Then update `scripts/convert_paddleformers_to_peft.py`'s key-rewrite block to apply that mapping and re-run the converter + evaluator.
+
+### Evaluation (Path B): script exits silently right after `Running model inference on 150 images...`
+The next line should be `Loading model from: ...`. If it never prints and the shell returns to a prompt, the most likely cause is a torch/CUDA segfault during `import torch` (no Python traceback because the process gets a SIGSEGV/SIGKILL). Bootstrap installs `paddlepaddle-gpu` against cu126 nvidia libs system-wide, but the uv venv's torch may have been built against a different CUDA. Diagnose by importing in isolation:
+
+```bash
+cd /workspace/paddleocr-aksara-jawa && \
+uv run --extra eval python -c "
+import torch
+print('torch', torch.__version__)
+print('cuda available:', torch.cuda.is_available())
+print('cuda device count:', torch.cuda.device_count())
+print('cuda device name:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')
+import transformers
+print('transformers', transformers.__version__)
+from transformers import AutoModelForCausalLM, AutoProcessor
+print('imports OK')
+"
+```
+
+Three outcomes:
+
+| What you see | Cause | Fix |
+|---|---|---|
+| All prints succeed incl. `imports OK` | Not an import problem — crash is in model loading | Re-run evaluate.py and watch the next print after "Loading model from:" carefully |
+| Crashes with a Python traceback | A specific import or CUDA call is broken | The traceback names the bad library — fix that |
+| Returns to prompt with no output (silent segfault) | torch/CUDA libs mismatch | `uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu126` then re-run |
+
 ### Evaluation: any of `KeyError: 'default'`, `compute_default_rope_parameters` missing, or `create_causal_mask() got 'inputs_embeds'`
 All three are symptoms of running PaddleOCR-VL on a transformers version newer than the model's modeling code expects. The model was authored against transformers 4.x; chasing the breaks "upward" into 5.x leads through one new error after another (we tried up to 5.6 in v1 and gave up).
 
