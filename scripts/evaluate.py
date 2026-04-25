@@ -290,6 +290,11 @@ def run_model_inference(
             )[0].strip()
         except Exception as e:
             print(f"  WARNING: inference failed for {record['image']}: {e}")
+            if i == 0:
+                # Print the full traceback for the first failure so we can
+                # diagnose root cause; subsequent failures stay terse.
+                import traceback as _tb
+                _tb.print_exc()
             pred = ""
 
         predictions.append(pred)
