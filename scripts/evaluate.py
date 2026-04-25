@@ -161,6 +161,7 @@ def run_model_inference(
     prompt: str = DEFAULT_PROMPT,
     max_new_tokens: int = 512,
     peft_adapter: str | None = None,
+    processor_path: str | None = None,
 ) -> list[str]:
     """
     Run PaddleOCR-VL inference on eval images via the HuggingFace transformers
@@ -325,8 +326,16 @@ def run_model_inference(
         _prep_with_cache_position._aksara_patched = True
         _model_cls.prepare_inputs_for_generation = _prep_with_cache_position
 
+    # Processor (chat template + image processor) defaults to model_path. When
+    # peft is being used to apply a LoRA on top of an upstream base model, the
+    # upstream processor may have been updated since our LoRA was trained — the
+    # chat template / special tokens then differ from what training saw and the
+    # model emits garbage. Override with `--processor_path <local_export_dir>`
+    # to use the training-time processor instead.
+    proc_src = processor_path or model_path
+    print(f"  Loading processor from: {proc_src}")
     processor = AutoProcessor.from_pretrained(
-        model_path, trust_remote_code=True, use_fast=True
+        proc_src, trust_remote_code=True, use_fast=True
     )
     if model.generation_config.pad_token_id is None:
         model.generation_config.pad_token_id = processor.tokenizer.eos_token_id
@@ -555,6 +564,11 @@ def main():
                     help="Optional path to a LoRA adapter dir to apply on top of --model_path "
                          "at runtime via peft.PeftModel.from_pretrained. Use this to bypass "
                          "the broken paddleformers-cli merged safetensors.")
+    ap.add_argument("--processor_path",      type=str, default=None,
+                    help="Optional path to load the AutoProcessor from (defaults to --model_path). "
+                         "Use this to pin the chat template / special tokens to the training-time "
+                         "processor when --model_path points at an upstream base whose processor "
+                         "has since been updated.")
     args = ap.parse_args()
 
     eval_dir = Path(args.eval_dir)
@@ -590,6 +604,7 @@ def main():
         predictions = run_model_inference(
             args.model_path, eval_dir, ground_truth,
             prompt=args.prompt, peft_adapter=args.peft_adapter,
+            processor_path=args.processor_path,
         )
 
     else:
