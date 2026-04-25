@@ -418,6 +418,33 @@ which `transformers.AutoModelForCausalLM.from_pretrained` cannot load on its own
 Run `paddleformers-cli export` first (see §5c) and upload `<output_dir>/export/`,
 not `<output_dir>/`.
 
+### Evaluation (Path A): `No Paddle model files were found in '<...>/export'`
+PaddleX defaulted to the classic Paddle inference engine and didn't find `.pdmodel`/`.pdiparams` because we exported HF safetensors. The fix is to tell PaddleOCRVL to use the **GenAI backend** (which reads safetensors). The supported kwargs vary by paddleocr version, so first introspect, then pass whichever backend kwarg exists. Drop into the pod and copy:
+
+```bash
+python3 -c "import paddleocr; print('paddleocr', paddleocr.__version__)" && \
+python3 << 'EOF'
+import inspect
+from paddleocr import PaddleOCRVL
+sig = inspect.signature(PaddleOCRVL.__init__)
+print("PaddleOCRVL kwargs:")
+for name, p in sig.parameters.items():
+    default = p.default if p.default is not inspect.Parameter.empty else "<required>"
+    print(f"  {name} = {default}")
+EOF
+```
+
+Look for a kwarg matching `*backend*`, `*genai*`, or `*server_url*`. The AMD ROCm article (Jan 2026) shows the YAML form:
+```yaml
+VLRecognition:
+  model_dir: ./checkpoint-5000
+  genai_config:
+    backend: native
+```
+The Python equivalent on current paddleocr is typically `vl_rec_backend="native"` or `vl_rec_genai_config={"backend": "native"}`. Once you know the right kwarg, add it to `scripts/predict_paddleocr.py` in the `PaddleOCRVL(...)` call and re-run.
+
+If no GenAI kwarg exists in your installed paddleocr, upgrade: `pip install -U "paddleocr[doc-parser]" "paddlex[ocr]"`. Or fall back to Path B (`scripts/evaluate.py --model_path ...`).
+
 ### Evaluation: any of `KeyError: 'default'`, `compute_default_rope_parameters` missing, or `create_causal_mask() got 'inputs_embeds'`
 All three are symptoms of running PaddleOCR-VL on a transformers version newer than the model's modeling code expects. The model was authored against transformers 4.x; chasing the breaks "upward" into 5.x leads through one new error after another (we tried up to 5.6 in v1 and gave up).
 
