@@ -38,12 +38,12 @@ eval = [
     # 2.5.x is the last cu124-native release. Lift the bound when the pod
     # template upgrades to CUDA 12.6+.
     "torch>=2.4,<2.6",
-    # PaddleOCR-VL's modeling code (modeling_paddleocr_vl.py) was authored
-    # against transformers 4.x — it relies on ROPE_INIT_FUNCTIONS["default"]
-    # (removed in 5.0) and `input_embeds` (renamed `inputs_embeds` in 5.x).
-    # The official inference snippet (HF discussion #1) requires >=4.55.
-    # Stay below 5.0 until upstream ships a transformers-5-compatible model.
-    "transformers>=4.55,<5.0",
+    # PaddleOCR-VL's modeling code now calls `create_causal_mask(inputs_embeds=...)`,
+    # which is only present in transformers >=5.6 (the older spelling was
+    # `input_embeds`). Earlier 4.x versions error with "unexpected keyword
+    # argument 'inputs_embeds'" on every image. Despite the model card claim
+    # of ">=4.55.0", upstream has moved on. Stay >=5.6 until further notice.
+    "transformers>=5.6",
     "accelerate>=0.34.0",
     "einops>=0.7.0",
     "torchvision>=0.19.0",
