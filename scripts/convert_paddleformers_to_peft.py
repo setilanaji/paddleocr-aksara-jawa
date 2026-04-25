@@ -104,21 +104,42 @@ def main() -> int:
         print(f"ERROR: no peft_model-*.safetensors found in {d}", file=sys.stderr)
         return 1
 
+    # Rewrite keys to match HF peft's expected schema:
+    #   paddleformers: `mlp_AR.linear_1.lora_A`
+    #   HF peft:      `base_model.model.mlp_AR.linear_1.lora_A.default.weight`
+    # peft loads the LoRA into a wrapped model where the underlying base is
+    # accessed at `base_model.model.<original_path>`, and each LoRA module
+    # has its parameters under the `.default` adapter slot, with `.weight`
+    # at the end (since LoRA matrices are nn.Parameter on a Linear module).
+    try:
+        from safetensors.torch import load_file, save_file
+    except ImportError:
+        print("ERROR: safetensors[torch] not installed; cannot rewrite keys", file=sys.stderr)
+        return 1
+
     out_safe = d / "adapter_model.safetensors"
-    if len(pf_shards) == 1:
-        if out_safe.exists() or out_safe.is_symlink():
-            out_safe.unlink()
-        out_safe.symlink_to(pf_shards[0].name)
-        print(f"  linked {out_safe.name} -> {pf_shards[0].name}")
-    else:
-        # Sharded — peft wants adapter_model.safetensors.index.json
-        # plus per-shard files renamed adapter_model-*-of-*.safetensors.
-        # For our v1 we have a single shard, so this branch is defensive.
-        print(f"WARNING: {len(pf_shards)} shards detected — peft loading may need manual index rewrite", file=sys.stderr)
-        for shard in pf_shards:
-            new_name = shard.name.replace("peft_model", "adapter_model")
-            (d / new_name).symlink_to(shard.name)
-            print(f"  linked {new_name} -> {shard.name}")
+    if out_safe.exists() or out_safe.is_symlink():
+        out_safe.unlink()
+
+    if len(pf_shards) > 1:
+        print(f"WARNING: {len(pf_shards)} shards — concatenating into a single adapter_model.safetensors", file=sys.stderr)
+
+    merged: dict[str, "torch.Tensor"] = {}
+    for shard in pf_shards:
+        merged.update(load_file(str(shard)))
+
+    new_state = {}
+    for k, v in merged.items():
+        nk = "base_model.model." + k
+        if nk.endswith(".lora_A") or nk.endswith(".lora_B"):
+            nk = nk + ".default.weight"
+        new_state[nk] = v
+
+    save_file(new_state, str(out_safe))
+    print(f"  wrote {out_safe.name}: {len(new_state)} keys, prefixed `base_model.model.` and `.default.weight` suffix")
+    print(f"    sample keys:")
+    for k in list(new_state.keys())[:3]:
+        print(f"      {k}")
 
     if args.inspect_keys:
         try:

@@ -251,6 +251,30 @@ def run_model_inference(
         device_map="auto",
     ).eval()
 
+    # IMPORTANT: patch cache_position on the BASE model class BEFORE peft
+    # wraps it. After PeftModel.from_pretrained, type(model) becomes
+    # PeftModelForCausalLM and our patch on it would never be reached —
+    # peft.generate routes back through the underlying class's prepare_inputs_for_generation.
+    _base_cls = type(model)
+    if not getattr(_base_cls.prepare_inputs_for_generation, "_aksara_patched", False):
+        _orig_base_prep = _base_cls.prepare_inputs_for_generation
+        def _base_prep_with_cache_position(self, input_ids, past_key_values=None, **kwargs):
+            if kwargs.get("cache_position") is None:
+                past_seen = 0
+                if past_key_values is not None:
+                    try:
+                        past_seen = past_key_values.get_seq_length()
+                    except (AttributeError, TypeError):
+                        try:
+                            past_seen = past_key_values[0][0].shape[-2]
+                        except Exception:
+                            past_seen = 0
+                cur_len = input_ids.shape[1]
+                kwargs["cache_position"] = torch.arange(past_seen, cur_len, device=input_ids.device)
+            return _orig_base_prep(self, input_ids, past_key_values=past_key_values, **kwargs)
+        _base_prep_with_cache_position._aksara_patched = True
+        _base_cls.prepare_inputs_for_generation = _base_prep_with_cache_position
+
     if peft_adapter:
         # Apply LoRA at runtime instead of using the broken merged safetensors.
         # paddleformers-cli writes the adapter as `peft_model-*.safetensors` +
