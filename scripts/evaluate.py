@@ -294,15 +294,12 @@ def run_model_inference(
 
         try:
             image = Image.open(img_path).convert("RGB")
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": image},
-                        {"type": "text", "text": prompt},
-                    ],
-                }
-            ]
+            # Match the official inference snippet from HF discussion #1
+            # exactly: plain-string user content, image passed via processor's
+            # `images=` arg only. The multimodal-content list form makes the
+            # chat template emit a different special-token sequence and the
+            # model generates invalid bytes.
+            messages = [{"role": "user", "content": prompt}]
             text = processor.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
