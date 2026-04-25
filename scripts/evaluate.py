@@ -196,6 +196,27 @@ def run_model_inference(
         ROPE_INIT_FUNCTIONS["default"] = _compute_default_rope_parameters
 
     print(f"Loading model from: {model_path}")
+
+    # transformers 5.x's _init_weights calls `module.compute_default_rope_parameters`
+    # on the model's RotaryEmbedding instance, but PaddleOCR-VL's RotaryEmbedding
+    # stores the rope-init function as `rope_init_fn` instead. Trigger the trust-
+    # remote-code load via AutoConfig, then patch the class before instantiation.
+    from transformers import AutoConfig
+    import importlib
+    cfg = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    modeling_mod_name = cfg.__class__.__module__.rsplit(".", 1)[0] + ".modeling_paddleocr_vl"
+    try:
+        modeling_mod = importlib.import_module(modeling_mod_name)
+        if hasattr(modeling_mod, "RotaryEmbedding"):
+            re_cls = modeling_mod.RotaryEmbedding
+            if not hasattr(re_cls, "compute_default_rope_parameters"):
+                # Make the attribute resolvable on instances by routing it to
+                # whatever rope_init_fn each instance was set up with at __init__.
+                re_cls.compute_default_rope_parameters = property(lambda self: self.rope_init_fn)
+                print("  patched RotaryEmbedding.compute_default_rope_parameters → rope_init_fn")
+    except Exception as e:
+        print(f"  WARNING: could not patch RotaryEmbedding ({e}); model load may fail")
+
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         trust_remote_code=True,
