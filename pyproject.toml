@@ -13,9 +13,10 @@ dependencies = [
     "opencv-python-headless>=4.8.0",
     "numpy>=2.0.0",
     "faker>=20.0.0",
-    # paddleocr (system-pip) and transformers<5 in the eval extra both
-    # tolerate huggingface_hub<1.0, so a single project-level pin works.
-    "huggingface_hub>=0.20,<1.0",
+    # huggingface_hub: do NOT pin here. The uv venv is isolated from system pip
+    # (where paddleocr lives and needs hub<1.0 for `cached_assets_path`).
+    # transformers>=5.6 in the eval extra requires hub>=1.5; let uv resolve
+    # the venv's hub independently.
     "jiwer>=3.0.0",
     "rapidfuzz>=3.0.0",
     "pandas>=2.0.0",
